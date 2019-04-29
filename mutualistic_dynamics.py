@@ -201,6 +201,7 @@ if __name__ == '__main__':
     if args.dump:
         results_dict = {
             'args': args.__dict__,
+            'v_iter': [],
             'abs_error': [],
             'rel_error': [],
             'true_y': [solution_numerical.squeeze().t()],
@@ -221,36 +222,58 @@ if __name__ == '__main__':
             with torch.no_grad():
                 pred_y = model(true_y0).squeeze().t() # odeint(model, true_y0, t)
                 loss = criterion(pred_y, true_y)
+                relative_loss = criterion(pred_y, true_y) / true_y.mean()
                 if args.dump:
                     # Info to dump
-                    relative_loss = criterion(pred_y, true_y) / true_y.mean()
+                    results_dict['v_iter'].append(itr)
                     results_dict['abs_error'].append(loss.item())    # {'abs_error': [], 'rel_error': [], 'X_t': []}
                     results_dict['rel_error'].append(relative_loss.item())
                     results_dict['predict_y'].append(pred_y)
                     results_dict['model_state_dict'].append(model.state_dict())
-                    now = datetime.datetime.now()
-                    appendix = now.strftime("%m%d-%H%M%S")
-                    results_dict_path = results_dir + r'/' + args.dump_prefix + appendix + '.results'
-                    torch.save(results_dict, results_dict_path)
-                    print('Dump results as: ' + results_dict_path)
+                    # now = datetime.datetime.now()
+                    # appendix = now.strftime("%m%d-%H%M%S")
+                    # results_dict_path = results_dir + r'/' + args.dump_prefix + appendix + '.results'
+                    # torch.save(results_dict, results_dict_path)
+                    # print('Dump results as: ' + results_dict_path)
 
                 print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
                       .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
 
-    now = datetime.datetime.now()
-    appendix = now.strftime("%m%d-%H%M%S")
+
     with torch.no_grad():
         pred_y = model(true_y0).squeeze().t()  # odeint(model, true_y0, t)
         loss = criterion(pred_y, true_y)
         relative_loss = criterion(pred_y, true_y) / true_y.mean()
         print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
               .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
+        now = datetime.datetime.now()
+        appendix = now.strftime("%m%d-%H%M%S")
         for ii in range(pred_y.shape[1]):
             xt_pred = pred_y[:, ii].cpu()
             # print(xt_pred.shape)
             if args.viz:
                 visualize(N, x0, xt_pred, '{:03d}-neu-'.format(ii+1)+appendix, 'Mutualistic Dynamics', dirname)
 
+    if args.dump:
+        now = datetime.datetime.now()
+        appendix = now.strftime("%m%d-%H%M%S")
+        results_dict_path = results_dir + r'/' + args.dump_prefix + appendix + '.results'
+        torch.save(results_dict, results_dict_path)
+        print('Dump results as: ' + results_dict_path)
+
     t_total = time.time() - t_start
     print('Total Time {:.4f}'.format(t_total))
+
+    # Test dumped results:
+    rr = torch.load(results_dict_path)
+    fig, ax = plt.subplots()
+    ax.plot(rr['v_iter'], rr['abs_error'], '-', label='Absolute Error')
+    ax.plot(rr['v_iter'], rr['rel_error'], '--', label='Relative Error')
+    legend = ax.legend( fontsize='x-large') # loc='upper right', shadow=True,
+    # legend.get_frame().set_facecolor('C0')
+    fig.savefig(results_dict_path + ".png", transparent=True)
+    fig.savefig(results_dict_path + ".pdf", transparent=True)
+    plt.show()
+    plt.pause(0.001)
+    plt.close(fig)
 
