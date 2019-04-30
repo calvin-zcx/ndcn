@@ -36,4 +36,7 @@ print('{} \pm {}'.format(v_abs_error.mean(), v_abs_error.std()))
 print('{:.3f} \pm {:.3f}'.format(v_abs_error.mean(), v_abs_error.std()))
 print('rel_error:')
 print('{} \pm {}'.format(v_rel_error.mean() , v_rel_error.std()))
-print('{:.1f}% \pm {:.1f}%'.format(v_rel_error.mean() * 100, v_rel_error.std() *100))
+print('{:.1f} \pm {:.1f} %'.format(v_rel_error.mean() * 100, v_rel_error.std() *100))
+
+
+# --dir results/mutualistic/grid  --type grid_our

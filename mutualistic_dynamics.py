@@ -278,3 +278,4 @@ if __name__ == '__main__':
     plt.close(fig)
 
 # --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
+# python mutualistic_dynamics.py  --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
