@@ -44,17 +44,17 @@ parser.add_argument('--seed', type=int, default=0, help='Random Seed')
 parser.add_argument('--T', type=float, default=5., help='Terminal Time')
 
 parser.add_argument('--dump', action='store_true', help='Save Results')
-parser.add_argument('--dump_prefix', type=str, default='', help='dump_prefix to distinguish results file')
+parser.add_argument('--dump_appendix', type=str, default='', help='dump_appendix to distinguish results file')
 
 
 args = parser.parse_args()
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
 if args.viz:
-    dirname = r'figure/' + args.network
+    dirname = r'figure/mutualistic/' + args.network
     makedirs(dirname)
 
 if args.dump:
-    results_dir = r'results/' + args.network
+    results_dir = r'results/mutualistic/' + args.network
     makedirs(results_dir)
 
 # Build network # A: Adjacency matrix, L: Laplacian Matrix,  OM: Base Operator
@@ -161,11 +161,11 @@ with torch.no_grad():
     print(solution_numerical.shape)
 
 
+now = datetime.datetime.now()
+appendix = now.strftime("%m%d-%H%M%S")
 for ii, xt in enumerate(solution_numerical, start=1):
     if args.viz:
         print(xt.shape)
-        now = datetime.datetime.now()
-        appendix = now.strftime("%m%d-%H%M%S")
         visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, 'Mutualistic Dynamics', dirname)
 
 
@@ -206,7 +206,8 @@ if __name__ == '__main__':
             'rel_error': [],
             'true_y': [solution_numerical.squeeze().t()],
             'predict_y': [],
-            'model_state_dict': []}
+            'model_state_dict': [],
+            'total_time': []}
 
     for itr in range(1, args.niters + 1):
         optimizer.zero_grad()
@@ -232,36 +233,35 @@ if __name__ == '__main__':
                     results_dict['model_state_dict'].append(model.state_dict())
                     # now = datetime.datetime.now()
                     # appendix = now.strftime("%m%d-%H%M%S")
-                    # results_dict_path = results_dir + r'/' + args.dump_prefix + appendix + '.results'
+                    # results_dict_path = results_dir + r'/result_' + appendix + '.' + args.dump_appendix
                     # torch.save(results_dict, results_dict_path)
                     # print('Dump results as: ' + results_dict_path)
 
                 print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
                       .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
 
+    now = datetime.datetime.now()
+    appendix = now.strftime("%m%d-%H%M%S")
     with torch.no_grad():
         pred_y = model(true_y0).squeeze().t()  # odeint(model, true_y0, t)
         loss = criterion(pred_y, true_y)
         relative_loss = criterion(pred_y, true_y) / true_y.mean()
         print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
               .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
-        now = datetime.datetime.now()
-        appendix = now.strftime("%m%d-%H%M%S")
-        for ii in range(pred_y.shape[1]):
-            xt_pred = pred_y[:, ii].cpu()
-            # print(xt_pred.shape)
-            if args.viz:
+
+        if args.viz:
+            for ii in range(pred_y.shape[1]):
+                xt_pred = pred_y[:, ii].cpu()
+                # print(xt_pred.shape)
                 visualize(N, x0, xt_pred, '{:03d}-neu-'.format(ii+1)+appendix, 'Mutualistic Dynamics', dirname)
 
-    if args.dump:
-        now = datetime.datetime.now()
-        appendix = now.strftime("%m%d-%H%M%S")
-        results_dict_path = results_dir + r'/' + args.dump_prefix + appendix + '.results'
-        torch.save(results_dict, results_dict_path)
-        print('Dump results as: ' + results_dict_path)
-
-    t_total = time.time() - t_start
-    print('Total Time {:.4f}'.format(t_total))
+        t_total = time.time() - t_start
+        print('Total Time {:.4f}'.format(t_total))
+        if args.dump:
+            results_dict['total_time'] = t_total
+            results_dict_path = results_dir + r'/result_' + appendix + '.' + args.dump_appendix
+            torch.save(results_dict, results_dict_path)
+            print('Dump results as: ' + results_dict_path)
 
     # Test dumped results:
     rr = torch.load(results_dict_path)
@@ -270,9 +270,11 @@ if __name__ == '__main__':
     ax.plot(rr['v_iter'], rr['rel_error'], '--', label='Relative Error')
     legend = ax.legend( fontsize='x-large') # loc='upper right', shadow=True,
     # legend.get_frame().set_facecolor('C0')
-    fig.savefig(results_dict_path + ".png", transparent=True)
-    fig.savefig(results_dict_path + ".pdf", transparent=True)
+    if args.dump:
+        fig.savefig(results_dict_path + ".png", transparent=True)
+        fig.savefig(results_dict_path + ".pdf", transparent=True)
     plt.show()
     plt.pause(0.001)
     plt.close(fig)
 
+# --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
