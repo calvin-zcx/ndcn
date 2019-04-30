@@ -239,7 +239,6 @@ if __name__ == '__main__':
                 print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
                       .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
 
-
     with torch.no_grad():
         pred_y = model(true_y0).squeeze().t()  # odeint(model, true_y0, t)
         loss = criterion(pred_y, true_y)
