@@ -43,9 +43,12 @@ parser.add_argument('--layout', type=str, choices=['community', 'degree'], defau
 parser.add_argument('--seed', type=int, default=0, help='Random Seed')
 parser.add_argument('--T', type=float, default=5., help='Terminal Time')
 
-parser.add_argument('--dump', action='store_true', help='Save Results')
-parser.add_argument('--dump_appendix', type=str, default='', help='dump_appendix to distinguish results file')
 
+parser.add_argument('--baseline', type=str,
+                    choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph'], default='differential_gcn')
+parser.add_argument('--dump', action='store_true', help='Save Results')
+parser.add_argument('--dump_appendix', type=str, default='',
+                    help='dump_appendix to distinguish results file, e.g. same as baseline name')
 
 args = parser.parse_args()
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
@@ -181,13 +184,46 @@ hidden_size = args.hidden  # args.hidden  # 20 default  # [400 * 1 ] * [1 * 20] 
 dropout = args.dropout  # 0 default, not stochastic ODE
 num_classes = 1  # 1 for regression
 
-embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
-                   nn.Linear(hidden_size, hidden_size, bias=True)]
-neural_dynamic_layer = [ODEBlock(
-    ODEFunc(hidden_size, OM, dropout=dropout),
-    t,
-    rtol=args.rtol, atol=args.atol, method=args.method)] # t is like  continuous depth
-semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
+# choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
+if args.baseline == 'differential_gcn':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                        nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)] # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
+
+elif args.baseline == 'no_embedding':
+    print('Choose model:' + args.baseline)
+    embedding_layer = []
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(input_size, OM, dropout=dropout),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(input_size, num_classes, bias=True)]
+
+elif args.baseline == 'no_control':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                       nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout, no_control=True),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
+
+elif args.baseline == 'no_graph':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                       nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout, no_graph=True),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
+
 model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
 
 
@@ -253,7 +289,8 @@ if __name__ == '__main__':
             for ii in range(pred_y.shape[1]):
                 xt_pred = pred_y[:, ii].cpu()
                 # print(xt_pred.shape)
-                visualize(N, x0, xt_pred, '{:03d}-neu-'.format(ii+1)+appendix, 'Mutualistic Dynamics', dirname)
+                visualize(N, x0, xt_pred,
+                          '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix, 'Mutualistic Dynamics', dirname)
 
         t_total = time.time() - t_start
         print('Total Time {:.4f}'.format(t_total))

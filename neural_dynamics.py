@@ -5,7 +5,7 @@ import torchdiffeq as ode
 
 
 class ODEFunc(nn.Module):
-    def __init__(self, hidden_size, A, dropout=0.0):
+    def __init__(self, hidden_size, A, dropout=0.0, no_graph=False, no_control=False):
         super(ODEFunc, self).__init__()
         self.hidden_size = hidden_size
         self.dropout = dropout
@@ -13,6 +13,8 @@ class ODEFunc(nn.Module):
         self.A = A  # N_node * N_node
         # self.nfe = 0
         self.wt = nn.Linear(hidden_size, hidden_size)
+        self.no_graph = no_graph
+        self.no_control = no_control
 
     def forward(self, t, x):  # How to use t?
         """
@@ -21,11 +23,13 @@ class ODEFunc(nn.Module):
         :return:
         """
         # self.nfe += 1
-        if hasattr(self.A, 'is_sparse') and self.A.is_sparse:
-            x = torch.sparse.mm(self.A, x)
-        else:
-            x = torch.mm(self.A, x)
-        x = self.wt(x)
+        if not self.no_graph:
+            if hasattr(self.A, 'is_sparse') and self.A.is_sparse:
+                x = torch.sparse.mm(self.A, x)
+            else:
+                x = torch.mm(self.A, x)
+        if not self.no_control:
+            x = self.wt(x)
         x = self.dropout_layer(x)
         x = torch.tanh(x)
         # x = F.relu(x)  # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster
