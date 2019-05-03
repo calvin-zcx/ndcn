@@ -57,6 +57,7 @@ device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 
 if args.viz:
     dirname = r'figure/gene/' + args.network
     makedirs(dirname)
+    fig_title = r'Gene Regulation Dynamics'
 
 if args.dump:
     results_dir = r'results/gene/' + args.network
@@ -146,10 +147,12 @@ with torch.no_grad():
 
 now = datetime.datetime.now()
 appendix = now.strftime("%m%d-%H%M%S")
+zmin = solution_numerical.min()
+zmax = solution_numerical.max()
 for ii, xt in enumerate(solution_numerical, start=1):
     if args.viz:
         print(xt.shape)
-        visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, 'Gene Regulation Dynamics', dirname)
+        visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, fig_title, dirname, zmin, zmax)
 
 
 true_y = solution_numerical.squeeze().t().to(device)  # 100 * 1 * 400  --squeeze--> 100 * 400 -t-> 400 * 100
@@ -270,7 +273,8 @@ if __name__ == '__main__':
                 xt_pred = pred_y[:, ii].cpu()
                 # print(xt_pred.shape)
                 visualize(N, x0, xt_pred,
-                          '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix, 'Mutualistic Dynamics', dirname)
+                          '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix,
+                          fig_title, dirname, zmin, zmax)
 
         t_total = time.time() - t_start
         print('Total Time {:.4f}'.format(t_total))

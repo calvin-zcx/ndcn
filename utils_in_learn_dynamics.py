@@ -17,7 +17,7 @@ def makedirs(dirname):
         os.makedirs(dirname)
 
 
-def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png_learn_dynamics'):
+def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png_learn_dynamics', zmin=None, zmax=None):
     """
     :param N:   N**2 is the number of nodes, N is the pixel of grid
     :param x0:  initial condition
@@ -25,8 +25,14 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
     :param figname:  figname , numbered
     :param title: title in figure
     :param dir: dir to save
+    :param zmin: ax.set_zlim(zmin, zmax)
+    :param zmax: ax.set_zlim(zmin, zmax)
     :return:
     """
+    if zmin is None:
+        zmin = x0.min()
+    if zmax is None:
+        zmax = x0.max()
     fig = plt.figure()  # figsize=(12, 4), facecolor='white'
     fig.tight_layout()
     x0 = x0.detach()
@@ -46,9 +52,9 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
     # ax_traj.set_xlim(t.min(), t.max())
     # ax_traj.set_ylim(-2, 5)
     # ax.pcolormesh(xt.view(N,N), cmap=plt.get_cmap('hot'))
-    surf = ax.plot_surface(X, Y, xt.numpy().reshape((N,N)), cmap='rainbow',
-                           linewidth=0, antialiased=False, vmin=x0.min(), vmax=x0.max())
-    ax.set_zlim(x0.min(), x0.max())
+    surf = ax.plot_surface(X, Y, xt.numpy().reshape((N, N)), cmap='rainbow',
+                           linewidth=0, antialiased=False, vmin=zmin, vmax=zmax)
+    ax.set_zlim(zmin, zmax)
     fig.colorbar(surf, shrink=0.5, aspect=5)
     # plt.show()
     fig.savefig(dir+'/'+figname+".png", transparent=True)
