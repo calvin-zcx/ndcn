@@ -12,7 +12,9 @@ import datetime
 from utils_in_learn_dynamics import *
 from neural_dynamics import *
 import torchdiffeq as ode
+import sys
 
+sys.stdout.flush()
 
 parser = argparse.ArgumentParser('Gene Regulation Dynamic Case')
 parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
@@ -65,26 +67,26 @@ n = args.n # e.g nodes number 400
 N = int(np.ceil(np.sqrt(n)))  # grid-layout pixels :20
 seed = args.seed
 if args.network == 'grid':
-    print("Choose graph: " + args.network, flush=True)
+    print("Choose graph: " + args.network)
     A = grid_8_neighbor_graph(N)
     G = nx.from_numpy_array(A.numpy())
 elif args.network == 'random':
-    print("Choose graph: " + args.network, flush=True)
+    print("Choose graph: " + args.network)
     G = nx.erdos_renyi_graph(n, 0.1, seed=seed)
     G = networkx_reorder_nodes(G, args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'power_law':
-    print("Choose graph: " + args.network, flush=True)
+    print("Choose graph: " + args.network)
     G = nx.barabasi_albert_graph(n, 5, seed=seed)
     G = networkx_reorder_nodes(G,  args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'small_world':
-    print("Choose graph: " + args.network, flush=True)
+    print("Choose graph: " + args.network)
     G = nx.newman_watts_strogatz_graph(400, 5, 0.5, seed=seed)
     G = networkx_reorder_nodes(G, args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'community':
-    print("Choose graph: " + args.network, flush=True)
+    print("Choose graph: " + args.network)
     n1 = int(n/3)
     n2 = int(n/3)
     n3 = int(n/4)
@@ -139,14 +141,14 @@ class GeneDynamics(nn.Module):
 
 with torch.no_grad():
     solution_numerical = ode.odeint(GeneDynamics(A, 1), x0, t, method='dopri5')  # shape: 1000 * 1 * 2
-    print(solution_numerical.shape, flush=True)
+    print(solution_numerical.shape)
 
 
 now = datetime.datetime.now()
 appendix = now.strftime("%m%d-%H%M%S")
 for ii, xt in enumerate(solution_numerical, start=1):
     if args.viz:
-        print(xt.shape, flush=True)
+        print(xt.shape)
         visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, 'Gene Regulation Dynamics', dirname)
 
 
@@ -164,7 +166,7 @@ num_classes = 1  # 1 for regression
 
 # choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
 if args.baseline == 'differential_gcn':
-    print('Choose model:' + args.baseline, flush=True)
+    print('Choose model:' + args.baseline)
     embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
                         nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
@@ -174,7 +176,7 @@ if args.baseline == 'differential_gcn':
     semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
 
 elif args.baseline == 'no_embedding':
-    print('Choose model:' + args.baseline, flush=True)
+    print('Choose model:' + args.baseline)
     embedding_layer = []
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(input_size, OM, dropout=dropout),
@@ -183,7 +185,7 @@ elif args.baseline == 'no_embedding':
     semantic_layer = [nn.Linear(input_size, num_classes, bias=True)]
 
 elif args.baseline == 'no_control':
-    print('Choose model:' + args.baseline, flush=True)
+    print('Choose model:' + args.baseline)
     embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
@@ -193,7 +195,7 @@ elif args.baseline == 'no_control':
     semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
 
 elif args.baseline == 'no_graph':
-    print('Choose model:' + args.baseline, flush=True)
+    print('Choose model:' + args.baseline)
     embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
@@ -252,7 +254,7 @@ if __name__ == '__main__':
                     # print('Dump results as: ' + results_dict_path)
 
                 print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
-                      .format(itr, loss.item(), relative_loss.item(), time.time() - t_start), flush=True)
+                      .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
 
     now = datetime.datetime.now()
     appendix = now.strftime("%m%d-%H%M%S")
@@ -261,7 +263,7 @@ if __name__ == '__main__':
         loss = criterion(pred_y, true_y)
         relative_loss = criterion(pred_y, true_y) / true_y.mean()
         print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
-              .format(itr, loss.item(), relative_loss.item(), time.time() - t_start), flush=True)
+              .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
 
         if args.viz:
             for ii in range(pred_y.shape[1]):
@@ -271,12 +273,12 @@ if __name__ == '__main__':
                           '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix, 'Mutualistic Dynamics', dirname)
 
         t_total = time.time() - t_start
-        print('Total Time {:.4f}'.format(t_total), flush=True)
+        print('Total Time {:.4f}'.format(t_total))
         if args.dump:
             results_dict['total_time'] = t_total
             results_dict_path = results_dir + r'/result_' + appendix + '.' + args.dump_appendix
             torch.save(results_dict, results_dict_path)
-            print('Dump results as: ' + results_dict_path, flush=True)
+            print('Dump results as: ' + results_dict_path)
 
     # Test dumped results:
     rr = torch.load(results_dict_path)
