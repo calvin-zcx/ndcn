@@ -13,8 +13,8 @@ from utils_in_learn_dynamics import *
 from neural_dynamics import *
 import torchdiffeq as ode
 import sys
-
-sys.stdout.flush()
+import functools
+print = functools.partial(print, flush=True)
 
 parser = argparse.ArgumentParser('Gene Regulation Dynamic Case')
 parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
