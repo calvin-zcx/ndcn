@@ -2,162 +2,120 @@ import os
 import argparse
 import time
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 import networkx as nx
+import datetime
+from utils_in_learn_dynamics import *
+from neural_dynamics import *
+import torchdiffeq as ode
 
 
-parser = argparse.ArgumentParser('Heat Diffusion Dynamics on Grid demo')
+parser = argparse.ArgumentParser('Gene Regulation Dynamic Case')
 parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
-parser.add_argument('--data_size', type=int, default=10)
-parser.add_argument('--batch_time', type=int, default=5)
-parser.add_argument('--batch_size', type=int, default=20)
+parser.add_argument('--rtol', type=float, default=0.01,
+                    help='optional float64 Tensor specifying an upper bound on relative error, per element of y')
+parser.add_argument('--atol', type=float, default=0.001,
+                    help='optional float64 Tensor specifying an upper bound on absolute error, per element of y')
+parser.add_argument('--lr', type=float, default=0.01,
+                    help='Initial learning rate.')
+parser.add_argument('--weight_decay', type=float, default=1e-3,
+                    help='Weight decay (L2 loss on parameters).')
+parser.add_argument('--dropout', type=float, default=0,
+                    help='Dropout rate (1 - keep probability).')
+parser.add_argument('--hidden', type=int, default=20,
+                    help='Number of hidden units.')
+parser.add_argument('--time_tick', type=int, default=10)
 parser.add_argument('--niters', type=int, default=2000)
 parser.add_argument('--test_freq', type=int, default=20)
 parser.add_argument('--viz', action='store_true')
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--adjoint', action='store_true')
-parser.add_argument('--dropout', type=float, default=0,
-                    help='Dropout rate (1 - keep probability).')
-parser.add_argument('--hidden', type=int, default=10,
-                    help='Number of hidden units.')
-parser.add_argument('--npix', type=int, default=20)
+
+parser.add_argument('--n', type=int, default=400, help='Number of nodes')
+parser.add_argument('--sparse', action='store_true')
+parser.add_argument('--network', type=str,
+                    choices=['grid', 'random', 'power_law', 'small_world', 'community'], default='grid')
+parser.add_argument('--layout', type=str, choices=['community', 'degree'], default='community')
+parser.add_argument('--seed', type=int, default=0, help='Random Seed')
+parser.add_argument('--T', type=float, default=5., help='Terminal Time')
+
+
+parser.add_argument('--baseline', type=str,
+                    choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph'], default='differential_gcn')
+parser.add_argument('--dump', action='store_true', help='Save Results')
+parser.add_argument('--dump_appendix', type=str, default='',
+                    help='dump_appendix to distinguish results file, e.g. same as baseline name')
+
 args = parser.parse_args()
-
-if args.adjoint:
-    from torchdiffeq import odeint_adjoint as odeint
-else:
-    from torchdiffeq import odeint
-
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+if args.viz:
+    dirname = r'figure/gene/' + args.network
+    makedirs(dirname)
 
+if args.dump:
+    results_dir = r'results/gene/' + args.network
+    makedirs(results_dir)
 
-def makedirs(dirname):
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
+# Build network # A: Adjacency matrix, L: Laplacian Matrix,  OM: Base Operator
+n = args.n # e.g nodes number 400
+N = int(np.ceil(np.sqrt(n)))  # grid-layout pixels :20
+seed = args.seed
+if args.network == 'grid':
+    print("Choose graph: " + args.network)
+    A = grid_8_neighbor_graph(N)
+    G = nx.from_numpy_array(A.numpy())
+elif args.network == 'random':
+    print("Choose graph: " + args.network)
+    G = nx.erdos_renyi_graph(n, 0.1, seed=seed)
+    G = networkx_reorder_nodes(G, args.layout)
+    A = torch.FloatTensor(nx.to_numpy_array(G))
+elif args.network == 'power_law':
+    print("Choose graph: " + args.network)
+    G = nx.barabasi_albert_graph(n, 5, seed=seed)
+    G = networkx_reorder_nodes(G,  args.layout)
+    A = torch.FloatTensor(nx.to_numpy_array(G))
+elif args.network == 'small_world':
+    print("Choose graph: " + args.network)
+    G = nx.newman_watts_strogatz_graph(400, 5, 0.5, seed=seed)
+    G = networkx_reorder_nodes(G, args.layout)
+    A = torch.FloatTensor(nx.to_numpy_array(G))
+elif args.network == 'community':
+    print("Choose graph: " + args.network)
+    n1 = int(n/3)
+    n2 = int(n/3)
+    n3 = int(n/4)
+    n4 = n - n1 - n2 -n3
+    G = nx.random_partition_graph([n1, n2, n3, n4], .25, .01, seed=seed)
+    G = networkx_reorder_nodes(G, args.layout)
+    A = torch.FloatTensor(nx.to_numpy_array(G))
 
 if args.viz:
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter
-    makedirs('png_gene')
+    visualize_graph_matrix(G, args.network)
 
-
-def visualize(N, Z, itr, dir='png_gene'):
-    if args.viz:
-        fig = plt.figure()  # figsize=(12, 4), facecolor='white'
-        # ax_traj = fig.add_subplot(131, frameon=False)
-        # ax_phase = fig.add_subplot(132, frameon=False)
-        # ax_vecfield = fig.add_subplot(133, frameon=False)
-        ax = fig.gca(projection='3d')
-        fig.tight_layout()
-        ax.cla()
-        ax.set_title('Heat Diffusion')
-        X = np.arange(0, N)
-        Y = np.arange(0, N)
-        X, Y = np.meshgrid(X, Y)  # X, Y, Z : 20 * 20
-        # R = np.sqrt(X ** 2 + Y ** 2)
-        # Z = np.sin(R)
-        # fig.set_xlabel('t')
-        # ax_traj.set_ylabel('x,y')
-        # ax_traj.plot(t.numpy(), true_y.numpy()[:, 0, 0], t.numpy(), true_y.numpy()[:, 0, 1], 'g-')
-        # ax_traj.plot(t.numpy(), pred_y.numpy()[:, 0, 0], '--', t.numpy(), pred_y.numpy()[:, 0, 1], 'b--')
-        # ax_traj.set_xlim(t.min(), t.max())
-        # ax_traj.set_ylim(-2, 5)
-        # ax.pcolormesh(xt.view(N,N), cmap=plt.get_cmap('hot'))
-        surf = ax.plot_surface(X, Y, xt.detach().numpy().reshape((N,N)), cmap='rainbow',
-                               linewidth=0, antialiased=False, vmin=0, vmax=25)
-        ax.set_zlim(-1, 25)
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        # plt.show()
-        fig.savefig(dir+'/{:06d}'.format(itr))
-        # plt.draw()
-        plt.pause(0.001)
-        plt.close(fig)
-
-def zipf_smoothing(A):
-    """
-    Input A: ndarray
-    :return:  #  (D + I)^-1/2 * ( A + I ) * (D + I)^-1/2
-    """
-    A_prime = A + np.eye(A.shape[0])
-    out_degree = np.array(A_prime.sum(1), dtype=np.float32)
-    int_degree = np.array(A_prime.sum(0), dtype=np.float32)
-
-    out_degree_sqrt_inv = np.power(out_degree, -0.5, where=(out_degree != 0))
-    int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
-    mx_operator = np.diag(out_degree_sqrt_inv) @ A_prime @ np.diag(int_degree_sqrt_inv)
-    return mx_operator
-
-N = args.npix
-n = N**2
-
-
-def grid_8_neighboer_graph(N):
-    """
-    Build discrete grid graph, each node has 8 neighbors
-    :param n:  sqrt of the number of nodes
-    :return:  A, the adjacency matrix
-    """
-    n = N ** 2
-    dx = [-1, 0, 1, -1, 1, -1, 0, 1]
-    dy = [-1, -1, -1, 0, 0, 1, 1, 1]
-    A = torch.zeros(n, n)
-    for x in range(N):
-        for y in range(N):
-            index = x * N + y
-            for i in range(len(dx)):
-                newx = x + dx[i]
-                newy = y + dy[i]
-                if N > newx >= 0 and N > newy >= 0:
-                    index2 = newx * N + newy
-                    A[index, index2] = 1
-    return A.float()
-
-
-# Laplacian Matrix L for heat diffusion
-A = grid_8_neighboer_graph(N)
 D = torch.diag(A.sum(1))
 L = (D - A)
-# test = zipf_smoothing(np.array([[1,1], [0, 1]]))
-
-
-OM = zipf_smoothing(A.numpy())
-OM = torch.tensor(OM).float()
+t = torch.linspace(0., args.T, args.time_tick) # args.time_tick) # 100 vector
+OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+if args.sparse:
+    # For small network, dense matrix is faster
+    # For large network, sparse matrix cause less memory
+    A = torch_sensor_to_torch_sparse_tensor(A)
+    OM = torch_sensor_to_torch_sparse_tensor(OM)
 
 # Initial Value
 x0 = torch.zeros(N, N)
-x0[1:5, 1:5] = 25
-x0[9:15, 9:15] = 20
-x0[1:5, 7:13] = 17
-x0 = x0.view(-1,1).float()
+x0[int(0.05*N):int(0.25*N), int(0.05*N):int(0.25*N)] = 25  # x0[1:5, 1:5] = 25  for N = 20 or n= 400 case
+x0[int(0.45*N):int(0.75*N), int(0.45*N):int(0.75*N)] = 20  # x0[9:15, 9:15] = 20 for N = 20 or n= 400 case
+x0[int(0.05*N):int(0.25*N), int(0.35*N):int(0.65*N)] = 17  # x0[1:5, 7:13] = 17 for N = 20 or n= 400 case
+x0 = x0.view(-1, 1).float()
 energy = x0.sum()
-# Analysis solution of X' = LX
-R,V = torch.eig(-L, eigenvectors=True)
-r = R[:,0].view(-1,1)  # torch.mm(L, V) = torch.mm(V, Lambda)
-
-c = torch.mm(V.t(), x0)   # V^-1 = V.t() for real symmetric matrix
-solutionList = [] # [x0.t()]
-
-ii = 0
-for t in torch.linspace(0., 5., args.data_size):
-    ii += 1
-    xt = torch.mm(V, torch.exp(t*r)*c)
-    # visualize(N, xt, ii)
-    energy = xt.sum()
-    solutionList.append(xt.t())
-
-solution_analysis = torch.stack(solutionList)
-print(solution_analysis.shape)
 
 
 class GeneDynamics(nn.Module):
-    #  dx/dt = b +
     def __init__(self,  A,  b, f=1, h=2):
         super(GeneDynamics, self).__init__()
         self.A = A   # Adjacency matrix
@@ -169,157 +127,170 @@ class GeneDynamics(nn.Module):
         """
         :param t:  time tick
         :param x:  initial value:  is 2d row vector feature, n * dim
-        :return: dX(t)/dt = k * L*X
+        :return: dxi(t)/dt = -b*xi^f + \sum_{j=1}^{N}Aij xj^h / (1 + xj^h)
         If t is not used, then it is autonomous system, only the time difference matters in numerical computing
         """
-        f = -self.b * (x ** self.f) + torch.mm(self.A, x**self.h / (x**self.h + 1))
+        if hasattr(self.A, 'is_sparse') and self.A.is_sparse:
+            f = -self.b * (x ** self.f) + torch.sparse.mm(self.A, x**self.h / (x**self.h + 1))
+        else:
+            f = -self.b * (x ** self.f) + torch.mm(self.A, x ** self.h / (x ** self.h + 1))
         return f
 
 
-t = torch.linspace(0., 5., args.data_size) # args.data_size) # 100 vector
 with torch.no_grad():
-    solution_numerical = odeint(GeneDynamics(A, 1), x0, t, method='dopri5') # shape: 1000 * 1 * 2
+    solution_numerical = ode.odeint(GeneDynamics(A, 1), x0, t, method='dopri5')  # shape: 1000 * 1 * 2
     print(solution_numerical.shape)
 
-ii = 0
-for xt in solution_numerical:
-    ii += 1
-    print(xt.shape)
-    visualize(N, xt, ii)
+
+now = datetime.datetime.now()
+appendix = now.strftime("%m%d-%H%M%S")
+for ii, xt in enumerate(solution_numerical, start=1):
+    if args.viz:
+        print(xt.shape)
+        visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, 'Gene Regulation Dynamics', dirname)
 
 
-print(F.l1_loss(solution_numerical, solution_analysis))
-
-true_y = solution_numerical.squeeze().t().to(device) # 100 * 1 * 400  --squeeze--> 100 * 400 -t-> 400 * 100
-true_y0 = x0.to(device) # 400 * 1
-L = L.to(device) # 400 * 400
-OM = OM.to(device) # 400 * 400
-
-
-def get_batch():
-    s = torch.from_numpy(np.random.choice(np.arange(args.data_size - args.batch_time, dtype=np.int64), args.batch_size, replace=False))
-    # s: 20
-    batch_y0 = true_y[s]  # (M, D) 500*1*2
-    batch_y0 = batch_y0.squeeze() # 500 * 2
-    batch_t = t[:args.batch_time]  # (T) 19
-    batch_y = torch.stack([true_y[s + i] for i in range(args.batch_time)], dim=0)
-    # (T, M, D) 19*500*1*2   from s and its following batch_time sample
-    batch_y = batch_y.squeeze() # 19 * 500 * 2
-    return batch_y0.to(device), batch_t.to(device), batch_y.to(device)
-
-
-class ODEFunc(nn.Module):
-    def __init__(self, hidden_size, A, dropout=0.0):
-        super(ODEFunc, self).__init__()
-        self.hidden_size = hidden_size
-        self.dropout = dropout
-        self.dropout_layer = nn.Dropout(dropout)
-        self.A = A  # N_node * N_node
-        # self.nfe = 0
-        self.wt = nn.Linear(hidden_size, hidden_size)
-
-    def forward(self, t, x): # How to use t?
-        """
-        :param t:  end time tick
-        :param x:  initial value   N_node * N_dim   400 * hidden_size
-        :return:
-        """
-        # self.nfe += 1
-        x = torch.mm(self.A, x)
-        x = self.dropout_layer(x)
-        x = self.wt(x)
-        x = torch.tanh(x)
-        # x = F.relu(x)  # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster
-        ## x = torch.sigmoid(x)
-        return x
-
-
-class ODEBlock(nn.Module):
-    def __init__(self, odefunc, vt):
-        super(ODEBlock, self).__init__()
-        self.odefunc = odefunc
-        self.integration_time_vector = vt # time vector
-
-    def forward(self, x):
-        self.integration_time_vector = self.integration_time_vector.type_as(x)
-        out = odeint(self.odefunc, x, self.integration_time_vector, rtol=.01, atol=.01)
-        # return out[-1]
-        return out # 100 * 400 * 10
-
-
-input_size = true_y0.shape[1]   # y0: 400*1 ,  input_size:1
-hidden_size = 20 # args.hidden  # 10 default
-dropout = args.dropout # 0 default
-num_classes = 1  # 1 for regression
-vt = torch.linspace(0., 5., args.data_size)  # args.data_size 100 (100 depth)
+true_y = solution_numerical.squeeze().t().to(device)  # 100 * 1 * 400  --squeeze--> 100 * 400 -t-> 400 * 100
+true_y0 = x0.to(device)  # 400 * 1
+L = L.to(device)  # 400 * 400
+OM = OM.to(device)  # 400 * 400
+A = A.to(device)
 
 # Build model
-embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(), # nn.ReLU(inplace=True),
-                nn.Linear(hidden_size, hidden_size, bias=True)]
-ODE_layer = [ODEBlock(ODEFunc(hidden_size, OM, dropout=dropout), vt)]
-semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
-model = nn.Sequential(*embedding_layer, *ODE_layer, *semantic_layer).to(device)
+input_size = true_y0.shape[1]   # y0: 400*1 ,  input_size:1
+hidden_size = args.hidden  # args.hidden  # 20 default  # [400 * 1 ] * [1 * 20] = 400 * 20
+dropout = args.dropout  # 0 default, not stochastic ODE
+num_classes = 1  # 1 for regression
 
+# choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
+if args.baseline == 'differential_gcn':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                        nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)] # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
 
-class RunningAverageMeter(object):
-    """Computes and stores the average and current value"""
+elif args.baseline == 'no_embedding':
+    print('Choose model:' + args.baseline)
+    embedding_layer = []
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(input_size, OM, dropout=dropout),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(input_size, num_classes, bias=True)]
 
-    def __init__(self, momentum=0.99):
-        self.momentum = momentum
-        self.reset()
+elif args.baseline == 'no_control':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                       nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout, no_control=True),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
 
-    def reset(self):
-        self.val = None
-        self.avg = 0
+elif args.baseline == 'no_graph':
+    print('Choose model:' + args.baseline)
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+                       nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock(
+        ODEFunc(hidden_size, OM, dropout=dropout, no_graph=True),
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
 
-    def update(self, val):
-        if self.val is None:
-            self.avg = val
-        else:
-            self.avg = self.avg * self.momentum + val * (1 - self.momentum)
-        self.val = val
+model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
 
 
 if __name__ == '__main__':
-
-    ii = 0
-
+    t_start = time.time()
     params = model.parameters()
-    optimizer = optim.Adam(params, lr=0.01, weight_decay=0.001) # 1e-3)  regularize W
-
-    end = time.time()
-
-    time_meter = RunningAverageMeter(0.97)
-    loss_meter = RunningAverageMeter(0.97)
+    optimizer = optim.Adam(params, lr=args.lr, weight_decay=args.weight_decay)
+    criterion = F.l1_loss  # F.mse_loss(pred_y, true_y)
+    # time_meter = RunningAverageMeter(0.97)
+    # loss_meter = RunningAverageMeter(0.97)
+    if args.dump:
+        results_dict = {
+            'args': args.__dict__,
+            'v_iter': [],
+            'abs_error': [],
+            'rel_error': [],
+            'true_y': [solution_numerical.squeeze().t()],
+            'predict_y': [],
+            'model_state_dict': [],
+            'total_time': []}
 
     for itr in range(1, args.niters + 1):
         optimizer.zero_grad()
-
-        pred_y = model(true_y0)  # 100 * 400 * 1 should be 400 * 100
+        pred_y = model(true_y0)  # 20 * 400 * 1 should be 400 * 20
         pred_y = pred_y.squeeze().t()
-
-        # pred_y = odeint(model, in_layer(batch_y0), in_layer(batch_t), method='dopri5' ) # 'dopri5'
-        # loss = torch.mean(torch.abs(pred_y - batch_y))
-        # loss = F.mse_loss(pred_y, true_y)
-        loss = F.l1_loss(pred_y, true_y)
-
+        loss = criterion(pred_y, true_y)  # 400 * 20 (time_tick)
         loss.backward()
         optimizer.step()
 
-        time_meter.update(time.time() - end)
-        loss_meter.update(loss.item())
-
+        # time_meter.update(time.time() - t_start)
+        # loss_meter.update(loss.item())
         if itr % args.test_freq == 0:
             with torch.no_grad():
-                ii += 1
                 pred_y = model(true_y0).squeeze().t() # odeint(model, true_y0, t)
-                loss = torch.mean(torch.abs(pred_y - true_y))
-                print('Iter {:04d} | Total Loss {:.6f}'.format(itr, loss.item()))
-                # visualize(true_y, pred_y, model, ii)
-        end = time.time()
+                loss = criterion(pred_y, true_y)
+                relative_loss = criterion(pred_y, true_y) / true_y.mean()
+                if args.dump:
+                    # Info to dump
+                    results_dict['v_iter'].append(itr)
+                    results_dict['abs_error'].append(loss.item())    # {'abs_error': [], 'rel_error': [], 'X_t': []}
+                    results_dict['rel_error'].append(relative_loss.item())
+                    results_dict['predict_y'].append(pred_y)
+                    results_dict['model_state_dict'].append(model.state_dict())
+                    # now = datetime.datetime.now()
+                    # appendix = now.strftime("%m%d-%H%M%S")
+                    # results_dict_path = results_dir + r'/result_' + appendix + '.' + args.dump_appendix
+                    # torch.save(results_dict, results_dict_path)
+                    # print('Dump results as: ' + results_dict_path)
 
+                print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
+                      .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
+
+    now = datetime.datetime.now()
+    appendix = now.strftime("%m%d-%H%M%S")
     with torch.no_grad():
-        for ii in range(pred_y.shape[1]):
-            xt = pred_y[:,ii].cpu()
-            print(xt.shape)
-            visualize(N, xt, ii+100)
+        pred_y = model(true_y0).squeeze().t()  # odeint(model, true_y0, t)
+        loss = criterion(pred_y, true_y)
+        relative_loss = criterion(pred_y, true_y) / true_y.mean()
+        print('Iter {:04d} | Total Loss {:.6f} | Relative Loss {:.6f} | Time {:.4f}'
+              .format(itr, loss.item(), relative_loss.item(), time.time() - t_start))
+
+        if args.viz:
+            for ii in range(pred_y.shape[1]):
+                xt_pred = pred_y[:, ii].cpu()
+                # print(xt_pred.shape)
+                visualize(N, x0, xt_pred,
+                          '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix, 'Mutualistic Dynamics', dirname)
+
+        t_total = time.time() - t_start
+        print('Total Time {:.4f}'.format(t_total))
+        if args.dump:
+            results_dict['total_time'] = t_total
+            results_dict_path = results_dir + r'/result_' + appendix + '.' + args.dump_appendix
+            torch.save(results_dict, results_dict_path)
+            print('Dump results as: ' + results_dict_path)
+
+    # Test dumped results:
+    rr = torch.load(results_dict_path)
+    fig, ax = plt.subplots()
+    ax.plot(rr['v_iter'], rr['abs_error'], '-', label='Absolute Error')
+    ax.plot(rr['v_iter'], rr['rel_error'], '--', label='Relative Error')
+    legend = ax.legend( fontsize='x-large') # loc='upper right', shadow=True,
+    # legend.get_frame().set_facecolor('C0')
+    if args.dump:
+        fig.savefig(results_dict_path + ".png", transparent=True)
+        fig.savefig(results_dict_path + ".pdf", transparent=True)
+    plt.show()
+    plt.pause(0.001)
+    plt.close(fig)
+
+# --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
+# python mutualistic_dynamics.py  --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our

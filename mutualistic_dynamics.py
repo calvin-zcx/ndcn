@@ -65,21 +65,26 @@ n = args.n # e.g nodes number 400
 N = int(np.ceil(np.sqrt(n)))  # grid-layout pixels :20
 seed = args.seed
 if args.network == 'grid':
+    print("Choose graph: " + args.network)
     A = grid_8_neighbor_graph(N)
     G = nx.from_numpy_array(A.numpy())
 elif args.network == 'random':
+    print("Choose graph: " + args.network)
     G = nx.erdos_renyi_graph(n, 0.1, seed=seed)
     G = networkx_reorder_nodes(G, args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'power_law':
+    print("Choose graph: " + args.network)
     G = nx.barabasi_albert_graph(n, 5, seed=seed)
     G = networkx_reorder_nodes(G,  args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'small_world':
+    print("Choose graph: " + args.network)
     G = nx.newman_watts_strogatz_graph(400, 5, 0.5, seed=seed)
     G = networkx_reorder_nodes(G, args.layout)
     A = torch.FloatTensor(nx.to_numpy_array(G))
 elif args.network == 'community':
+    print("Choose graph: " + args.network)
     n1 = int(n/3)
     n2 = int(n/3)
     n3 = int(n/4)
