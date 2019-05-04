@@ -170,7 +170,7 @@ num_classes = 1  # 1 for regression
 # choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
 if args.baseline == 'differential_gcn':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True),  nn.ReLU(inplace=True), # nn.Tanh(),  #
                         nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout),
@@ -189,7 +189,7 @@ elif args.baseline == 'no_embedding':
 
 elif args.baseline == 'no_control':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.ReLU(inplace=True), # nn.Tanh(),  #
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout, no_control=True),
@@ -199,7 +199,7 @@ elif args.baseline == 'no_control':
 
 elif args.baseline == 'no_graph':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  # nn.ReLU(inplace=True),
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.ReLU(inplace=True), # nn.Tanh(),  #
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout, no_graph=True),
@@ -299,4 +299,4 @@ if __name__ == '__main__':
     plt.close(fig)
 
 # --time_tick 20 --niters 2500 --network grid --dump --dump_appendix differential_gcn --baseline differential_gcn  --viz
-# python gene_dynamics.py  --time_tick 20 --niters 2500 --network grid --dump --dump_appendix differential_gcn --baseline differential_gcn  --viz
+# python heat_dynamics.py  --time_tick 20 --niters 2500 --network grid --dump --dump_appendix differential_gcn --baseline differential_gcn  --viz
