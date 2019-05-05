@@ -97,7 +97,7 @@ def normalized_plus(A):
 def normalized_laplacian(A):
     """
     Input A: np.ndarray
-    :return:  np.ndarray  I - (D)^-1/2 * ( A ) * (D )^-1/2
+    :return:  np.ndarray  D^-1/2 * ( D - A ) * D^-1/2 = I - D^-1/2 * ( A ) * D^-1/2
     """
     out_degree = np.array(A.sum(1), dtype=np.float32)
     int_degree = np.array(A.sum(0), dtype=np.float32)

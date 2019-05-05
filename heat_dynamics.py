@@ -102,8 +102,8 @@ if args.viz:
 D = torch.diag(A.sum(1))
 L = (D - A)
 t = torch.linspace(0., args.T, args.time_tick)  # args.time_tick) # 100 vector
-OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-nL = torch.FloatTensor(normalized_laplacian(A.numpy()))
+# OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+OM = torch.FloatTensor(normalized_laplacian(A.numpy()))
 
 if args.sparse:
     # For small network, dense matrix is faster
@@ -111,7 +111,6 @@ if args.sparse:
     L = torch_sensor_to_torch_sparse_tensor(L)
     A = torch_sensor_to_torch_sparse_tensor(A)
     OM = torch_sensor_to_torch_sparse_tensor(OM)
-    nL = torch_sensor_to_torch_sparse_tensor(nL)
 
 # Initial Value
 x0 = torch.zeros(N, N)
@@ -163,7 +162,6 @@ true_y0 = x0.to(device)  # 400 * 1
 L = L.to(device)  # 400 * 400
 OM = OM.to(device)  # 400 * 400
 A = A.to(device)
-nL = nL.to(device)
 
 # Build model
 input_size = true_y0.shape[1]   # y0: 400*1 ,  input_size:1
@@ -177,7 +175,7 @@ if args.baseline == 'differential_gcn':
     embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  #nn.ReLU(inplace=True), #
                         nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
-        ODEFunc(hidden_size, nL, dropout=dropout), # OM
+        ODEFunc(hidden_size, OM, dropout=dropout),  # OM
         t,
         rtol=args.rtol, atol=args.atol, method=args.method)]  # t is like  continuous depth
     semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]

@@ -101,8 +101,10 @@ if args.viz:
 D = torch.diag(A.sum(1))
 L = (D - A)
 t = torch.linspace(0., args.T, args.time_tick)  # args.time_tick) # 100 vector
-OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-OM = torch.FloatTensor(normalized_plus(A.numpy()))
+# OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+OM = torch.FloatTensor(normalized_laplacian(A.numpy()))
+
+# OM = torch.FloatTensor(normalized_plus(A.numpy()))
 if args.sparse:
     # For small network, dense matrix is faster
     # For large network, sparse matrix cause less memory
