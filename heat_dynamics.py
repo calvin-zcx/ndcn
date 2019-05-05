@@ -170,7 +170,7 @@ num_classes = 1  # 1 for regression
 # choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
 if args.baseline == 'differential_gcn':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True),  nn.ReLU(inplace=True), # nn.Tanh(),  #
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.ReLU(inplace=True), #nn.Tanh(),  #
                         nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout),
@@ -189,7 +189,7 @@ elif args.baseline == 'no_embedding':
 
 elif args.baseline == 'no_control':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.ReLU(inplace=True), # nn.Tanh(),  #
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True),  nn.ReLU(inplace=True),  # nn.Tanh(),  #
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout, no_control=True),
@@ -199,7 +199,7 @@ elif args.baseline == 'no_control':
 
 elif args.baseline == 'no_graph':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.ReLU(inplace=True), # nn.Tanh(),  #
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True),  nn.ReLU(inplace=True), #nn.Tanh(),  #
                        nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout, no_graph=True),
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         optimizer.zero_grad()
         pred_y = model(true_y0)  # 20 * 400 * 1 should be 400 * 20
         pred_y = pred_y.squeeze().t()
-        loss = criterion(pred_y, true_y)  # 400 * 20 (time_tick)
+        loss = criterion(pred_y, true_y)  # 400 * 20 (time_tick)   # torch.mean(torch.abs(pred_y - batch_y))
         loss.backward()
         optimizer.step()
 
