@@ -80,6 +80,34 @@ def zipf_smoothing(A):
     return mx_operator
 
 
+def normalized_plus(A):
+    """
+    Input A: np.ndarray
+    :return:  np.ndarray  D ^-1/2 * ( A + I ) * D^-1/2
+    """
+    out_degree = np.array(A.sum(1), dtype=np.float32)
+    int_degree = np.array(A.sum(0), dtype=np.float32)
+
+    out_degree_sqrt_inv = np.power(out_degree, -0.5, where=(out_degree != 0))
+    int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
+    mx_operator = np.diag(out_degree_sqrt_inv) @ (A + np.eye(A.shape[0])) @ np.diag(int_degree_sqrt_inv)
+    return mx_operator
+
+
+def normalized_laplacian(A):
+    """
+    Input A: np.ndarray
+    :return:  np.ndarray  I - (D)^-1/2 * ( A ) * (D )^-1/2
+    """
+    out_degree = np.array(A.sum(1), dtype=np.float32)
+    int_degree = np.array(A.sum(0), dtype=np.float32)
+
+    out_degree_sqrt_inv = np.power(out_degree, -0.5, where=(out_degree != 0))
+    int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
+    mx_operator = np.eye(A.shape[0]) - np.diag(out_degree_sqrt_inv) @ A @ np.diag(int_degree_sqrt_inv)
+    return mx_operator
+
+
 def grid_8_neighbor_graph(N):
     """
     Build discrete grid graph, each node has 8 neighbors
@@ -132,7 +160,7 @@ def get_batch(true_y, t, data_size, batch_time, batch_size, device):
     batch_t = t[:batch_time]  # (T) 19
     batch_y = torch.stack([true_y[s + i] for i in range(batch_time)], dim=0)
     # (T, M, D) 19*500*1*2   from s and its following batch_time sample
-    batch_y = batch_y.squeeze() # 19 * 500 * 2
+    batch_y = batch_y.squeeze()  # 19 * 500 * 2
     return batch_y0.to(device), batch_t.to(device), batch_y.to(device)
 
 
