@@ -53,6 +53,7 @@ parser.add_argument('--dump_appendix', type=str, default='',
 
 args = parser.parse_args()
 device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cpu')
 if args.viz:
     dirname = r'figure/mutualistic/' + args.network
     makedirs(dirname)
