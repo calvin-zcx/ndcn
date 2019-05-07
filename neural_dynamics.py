@@ -31,8 +31,8 @@ class ODEFunc(nn.Module):
         if not self.no_control:
             x = self.wt(x)
         x = self.dropout_layer(x)
-        x = torch.tanh(x)
-        # x = F.relu(x)  # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster
+        # x = torch.tanh(x)
+        x = F.relu(x)  # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster !!! Better than tanh??
         # x = torch.sigmoid(x)
         return x
 

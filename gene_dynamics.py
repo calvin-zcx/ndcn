@@ -53,7 +53,11 @@ parser.add_argument('--dump_appendix', type=str, default='',
                     help='dump_appendix to distinguish results file, e.g. same as baseline name')
 
 args = parser.parse_args()
-device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+if args.gpu >= 0:
+    device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+else:
+    device = torch.device('cpu')
+
 if args.viz:
     dirname = r'figure/gene/' + args.network
     makedirs(dirname)

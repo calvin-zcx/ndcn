@@ -53,7 +53,11 @@ parser.add_argument('--dump_appendix', type=str, default='',
                     help='dump_appendix to distinguish results file, e.g. same as baseline name')
 
 args = parser.parse_args()
-device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+if args.gpu >= 0:
+    device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+else:
+    device = torch.device('cpu')
+
 if args.viz:
     dirname = r'figure/heat/' + args.network
     makedirs(dirname)
@@ -64,7 +68,7 @@ if args.dump:
     makedirs(results_dir)
 
 # Build network # A: Adjacency matrix, L: Laplacian Matrix,  OM: Base Operator
-n = args.n # e.g nodes number 400
+n = args.n  # e.g nodes number 400
 N = int(np.ceil(np.sqrt(n)))  # grid-layout pixels :20
 seed = args.seed
 if args.network == 'grid':
