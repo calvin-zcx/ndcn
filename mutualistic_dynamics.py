@@ -317,19 +317,18 @@ if __name__ == '__main__':
             torch.save(results_dict, results_dict_path)
             print('Dump results as: ' + results_dict_path)
 
-    # Test dumped results:
-    rr = torch.load(results_dict_path)
-    fig, ax = plt.subplots()
-    ax.plot(rr['v_iter'], rr['abs_error'], '-', label='Absolute Error')
-    ax.plot(rr['v_iter'], rr['rel_error'], '--', label='Relative Error')
-    legend = ax.legend( fontsize='x-large') # loc='upper right', shadow=True,
-    # legend.get_frame().set_facecolor('C0')
-    if args.dump:
-        fig.savefig(results_dict_path + ".png", transparent=True)
-        fig.savefig(results_dict_path + ".pdf", transparent=True)
-    plt.show()
-    plt.pause(0.001)
-    plt.close(fig)
+            # Test dumped results: If no dump, error, delete later!!!
+            rr = torch.load(results_dict_path)
+            fig, ax = plt.subplots()
+            ax.plot(rr['v_iter'], rr['abs_error'], '-', label='Absolute Error')
+            ax.plot(rr['v_iter'], rr['rel_error'], '--', label='Relative Error')
+            legend = ax.legend( fontsize='x-large') # loc='upper right', shadow=True,
+            # legend.get_frame().set_facecolor('C0')
+            fig.savefig(results_dict_path + ".png", transparent=True)
+            fig.savefig(results_dict_path + ".pdf", transparent=True)
+            plt.show()
+            plt.pause(0.001)
+            plt.close(fig)
 
 # --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
 # python mutualistic_dynamics.py  --time_tick 20 --niters 2000 --network grid --dump --dump_appendix grid_our
