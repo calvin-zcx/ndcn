@@ -107,7 +107,7 @@ def load_data(dataset_name=r"cora", delta=1):
     # print('Delta: {}'.format(delta))
     # adj_gcn = prp_gcn.residual_smoothing(delta)
     # adj_gcn = prp_gcn.first_order_gcn()
-    # adj_gcn = prp_gcn.normalized_laplacian() #* (-1.0)
+    # adj_gcn = prp_gcn.normalized_laplacian()  # * (-1.0)
     # adj_gcn = prp_gcn.laplacian()
     # adj_gcn = adj
     # adj_gcn = prp_gcn.zipf_smoothing_prime()

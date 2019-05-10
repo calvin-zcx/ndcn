@@ -59,52 +59,52 @@ class ResBlock(nn.Module):
         f = F.relu(f)
         return shortcut + f * self.time_step
 
-
-class ODEFunc(nn.Module):
-    def __init__(self, hidden_size, A, dropout=0.0):
-        super(ODEFunc, self).__init__()
-        self.hidden_size = hidden_size
-        self.dropout = dropout
-        self.dropout_layer = nn.Dropout(dropout)
-        self.A = A
-        self.nfe = 0
-        # self.linear = nn.Linear(hidden_size, hidden_size, bias=True)
-        # self.batchnorm = nn.BatchNorm1d(hidden_size)
-
-        # self.scale = nn.Parameter(torch.FloatTensor([1]))  # [0.01]))  # np.random.rand(1) *
-        # self.bias = nn.Parameter(torch.FloatTensor([1e-3]))
-
-    def forward(self, t, x): # How to use t?
-        self.nfe += 1
-        f = torch.sparse.mm(self.A, x)
-        # f = self.linear(f)
-        f = self.dropout_layer(f)  # drop out for input
-        # f = row_normalization(f)
-        # f = self.batchnorm(f)
-        f = F.relu(f)  # !!!!! Not use relu seems doesn't  matter!!!!!!
-        return f    # self.scale + self.bias
-
-
-class ODEBlock(nn.Module):
-    def __init__(self, odefunc):
-        super(ODEBlock, self).__init__()
-        self.odefunc = odefunc
-        # self.integration_time = torch.tensor([0, 10]).float()
-
-        self.integration_time = torch.linspace(0, 1.9, 10).float()
-
-    def forward(self, x):
-        self.integration_time = self.integration_time.type_as(x)
-        out = ode.odeint(self.odefunc, x, self.integration_time, rtol=.1, atol=.1)
-        # out = ode.odeint_adjoint(self.odefunc, x, self.integration_time, rtol=1e-1, atol=1e-1)
-        # return out[1]
-        return out[-1]
-
-    @property
-    def nfe(self):
-        return self.odefunc.nfe
-
-    @nfe.setter
-    def nfe(self, value):
-        self.odefunc.nfe = value
+#
+# class ODEFunc(nn.Module):
+#     def __init__(self, hidden_size, A, dropout=0.0):
+#         super(ODEFunc, self).__init__()
+#         self.hidden_size = hidden_size
+#         self.dropout = dropout
+#         self.dropout_layer = nn.Dropout(dropout)
+#         self.A = A
+#         self.nfe = 0
+#         # self.linear = nn.Linear(hidden_size, hidden_size, bias=True)
+#         # self.batchnorm = nn.BatchNorm1d(hidden_size)
+#
+#         # self.scale = nn.Parameter(torch.FloatTensor([1]))  # [0.01]))  # np.random.rand(1) *
+#         # self.bias = nn.Parameter(torch.FloatTensor([1e-3]))
+#
+#     def forward(self, t, x): # How to use t?
+#         self.nfe += 1
+#         f = torch.sparse.mm(self.A, x)
+#         # f = self.linear(f)
+#         f = self.dropout_layer(f)  # drop out for input
+#         # f = row_normalization(f)
+#         # f = self.batchnorm(f)
+#         f = F.relu(f)  # !!!!! Not use relu seems doesn't  matter!!!!!!
+#         return f    # self.scale + self.bias
+#
+#
+# class ODEBlock(nn.Module):
+#     def __init__(self, odefunc):
+#         super(ODEBlock, self).__init__()
+#         self.odefunc = odefunc
+#         # self.integration_time = torch.tensor([0, 10]).float()
+#
+#         self.integration_time = torch.linspace(0, 1.9, 10).float()
+#
+#     def forward(self, x):
+#         self.integration_time = self.integration_time.type_as(x)
+#         out = ode.odeint(self.odefunc, x, self.integration_time, rtol=.1, atol=.1)
+#         # out = ode.odeint_adjoint(self.odefunc, x, self.integration_time, rtol=1e-1, atol=1e-1)
+#         # return out[1]
+#         return out[-1]
+#
+#     @property
+#     def nfe(self):
+#         return self.odefunc.nfe
+#
+#     @nfe.setter
+#     def nfe(self, value):
+#         self.odefunc.nfe = value
 

@@ -32,13 +32,14 @@ class ODEFunc(nn.Module):
             x = self.wt(x)
         x = self.dropout_layer(x)
         # x = torch.tanh(x)
-        x = F.relu(x)  # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster !!! Better than tanh??
+        x = F.relu(x)
+        # !!!!! Not use relu seems doesn't  matter!!!!!! in theory. Converge faster !!! Better than tanh??
         # x = torch.sigmoid(x)
         return x
 
 
 class ODEBlock(nn.Module):
-    def __init__(self, odefunc, vt, rtol=.01, atol=.001, method='dopri5', adjoint=False):
+    def __init__(self, odefunc, vt, rtol=.01, atol=.001, method='dopri5', adjoint=False, terminal=False):
         """
         :param odefunc: X' = f(X, t, G, W)
         :param vt:
@@ -64,6 +65,7 @@ class ODEBlock(nn.Module):
         self.atol = atol
         self.method = method
         self.adjoint = adjoint
+        self.terminal = terminal
 
     def forward(self, x):
         self.integration_time_vector = self.integration_time_vector.type_as(x)
@@ -74,5 +76,5 @@ class ODEBlock(nn.Module):
             out = ode.odeint(self.odefunc, x, self.integration_time_vector,
                              rtol=self.rtol, atol=self.atol, method=self.method)
         # return out[-1]
-        return out  # 100 * 400 * 10
+        return out[-1] if self.terminal else out  # 100 * 400 * 10
 

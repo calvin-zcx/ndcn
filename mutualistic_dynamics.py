@@ -100,6 +100,7 @@ elif args.network == 'community':
     A = torch.FloatTensor(nx.to_numpy_array(G))
 
 if args.viz:
+    makedirs(r'figure/network/')
     visualize_graph_matrix(G, args.network)
 
 D = torch.diag(A.sum(1))

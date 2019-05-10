@@ -39,7 +39,7 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
     xt = xt.detach()
     ax = fig.gca(projection='3d')
     ax.cla()
-    ax.set_title(title)
+    # ax.set_title(title)
     X = np.arange(0, N)
     Y = np.arange(0, N)
     X, Y = np.meshgrid(X, Y)  # X, Y, Z : 20 * 20
@@ -55,7 +55,7 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
     surf = ax.plot_surface(X, Y, xt.numpy().reshape((N, N)), cmap='rainbow',
                            linewidth=0, antialiased=False, vmin=zmin, vmax=zmax)
     ax.set_zlim(zmin, zmax)
-    fig.colorbar(surf, shrink=0.5, aspect=5)
+    # fig.colorbar(surf, shrink=0.5, aspect=5)
     # plt.show()
     fig.savefig(dir+'/'+figname+".png", transparent=True)
     fig.savefig(dir+'/'+figname + ".pdf", transparent=True)
@@ -63,6 +63,20 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
     # plt.draw()
     plt.pause(0.001)
     plt.close(fig)
+
+
+def visualize_graph_matrix(G, title, dir=r'figure/network'):
+    A = nx.to_numpy_array(G)
+    # plt.pcolormesh(B)
+    fig = plt.figure()  # figsize=(12, 4), facecolor='white'
+    # plt.title(title)
+    fig.tight_layout()
+    plt.imshow(A, cmap='Greys')  # ''YlGn')
+    # plt.pcolormesh(A)
+    plt.show()
+
+    fig.savefig(dir + '/' + title + ".png", transparent=True)
+    fig.savefig(dir + '/' + title + ".pdf", transparent=True)
 
 
 def zipf_smoothing(A):
@@ -221,15 +235,7 @@ def networkx_reorder_nodes(G, type=None):
     return new_G
 
 
-def visualize_graph_matrix(G, title):
-    A = nx.to_numpy_array(G)
-    # plt.pcolormesh(B)
-    fig = plt.figure()  # figsize=(12, 4), facecolor='white'
-    plt.title(title)
-    fig.tight_layout()
-    plt.imshow(A, cmap='YlGn')
-    # plt.pcolormesh(A)
-    plt.show()
+
 
 
 def test_graph_generator():

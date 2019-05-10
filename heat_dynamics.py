@@ -101,6 +101,7 @@ elif args.network == 'community':
     A = torch.FloatTensor(nx.to_numpy_array(G))
 
 if args.viz:
+    makedirs(r'figure/network/')
     visualize_graph_matrix(G, args.network)
 
 D = torch.diag(A.sum(1))
@@ -176,8 +177,9 @@ num_classes = 1  # 1 for regression
 # choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph']
 if args.baseline == 'differential_gcn':
     print('Choose model:' + args.baseline)
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),  #nn.ReLU(inplace=True), #
-                        nn.Linear(hidden_size, hidden_size, bias=True)]
+    # nn.ReLU(inplace=True), #
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh(),
+                       nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
         ODEFunc(hidden_size, OM, dropout=dropout),  # OM
         t,
