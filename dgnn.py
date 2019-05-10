@@ -62,6 +62,9 @@ parser.add_argument('--Euler', action='store_true', default=False,
 parser.add_argument('--T', type=float, default=2., help='Terminal Time')
 parser.add_argument('--time_tick', type=int, default=5)
 parser.add_argument('--no_control', action='store_true', help='No control in DYnamics')
+parser.add_argument('--method', type=str,
+                    choices=['dopri5', 'adams', 'explicit_adams', 'fixed_adams','tsit5', 'euler', 'midpoint', 'rk4'],
+                    default='dopri5')
 
 args, _ = parser.parse_known_args()
 # Test if we can use GPU
@@ -161,14 +164,14 @@ if args.model == 'differential_gcn':
     time_tick = args.time_tick
     print('T : {}, time tick: {}'.format(T, time_tick))
     t = torch.linspace(0, T, time_tick).float()
-    control = True if args.no_control else False
+    no_control = True if args.no_control else False
 
     embedding_layer = [nn.Linear(input_size, hidden_size, bias=True),  nn.Tanh()]#,
                        # nn.Linear(hidden_size, hidden_size, bias=True)]
         # RowNorm(),,
         #               nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
-        ODEFunc(hidden_size, adj, dropout=dropout, no_control=control),  # OM
+        ODEFunc(hidden_size, adj, dropout=dropout, no_control=no_control),  # OM
         t,
         rtol=args.rtol, atol=args.atol, method=args.method, terminal=True)]  # t is like  continuous depth
     semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
