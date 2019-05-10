@@ -29,7 +29,6 @@ parser.add_argument('--fastmode', action='store_true', default=False,
 parser.add_argument('--seed', type=int, default=-1, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=200,
                     help='Number of epochs to train.')
-parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
 parser.add_argument('--rtol', type=float, default=0.1, #0.01,
                     help='optional float64 Tensor specifying an upper bound on relative error, per element of y')
 parser.add_argument('--atol', type=float, default=0.1, #0.001,
