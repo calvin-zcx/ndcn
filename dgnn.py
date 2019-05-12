@@ -170,7 +170,7 @@ if args.model == 'differential_gcn':
         # RowNorm(),,
         #               nn.Linear(hidden_size, hidden_size, bias=True)]
     neural_dynamic_layer = [ODEBlock(
-        ODEFunc(hidden_size, adj, dropout=dropout, no_control=no_control),  # OM
+        ODEFunc_A(hidden_size, adj, dropout=dropout, no_control=no_control),  # OM
         t,
         rtol=args.rtol, atol=args.atol, method=args.method, terminal=True)]  # t is like  continuous depth
     semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]

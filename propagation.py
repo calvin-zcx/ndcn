@@ -1,5 +1,9 @@
 import numpy as np
 import scipy.sparse as sp
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torchdiffeq as ode
 
 
 class Propagation:
@@ -84,6 +88,21 @@ class Propagation:
         mx_operator = sp.csr_matrix(out_degree_sqrt_inv).multiply(A_prime).multiply(int_degree_sqrt_inv)
         return mx_operator  ## - sp.eye(self.A.shape[0])
 
+    def zipf_smoothing_alpha(self):
+        """
+        :return:  #  (D + I)^-1/2 * ( 0.5 * A + 0.5*I ) * (D + I)^-1/2
+        """
+        assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
+
+        A_prime = 0.4 * self.A + 0.6 * sp.eye(self.A.shape[0])
+        out_degree = np.array(A_prime.sum(1), dtype=np.float32)
+        int_degree = np.array(A_prime.sum(0), dtype=np.float32)
+
+        out_degree_sqrt_inv = np.power(out_degree, -0.5, where=(out_degree != 0))
+        int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
+        mx_operator = sp.csr_matrix(out_degree_sqrt_inv).multiply(A_prime).multiply(int_degree_sqrt_inv)
+        return mx_operator  ## - sp.eye(self.A.shape[0])
+
     def zipf_smoothing_prime(self):
         """
         :return:  #  (D + I)^-1/2 * ( A + I ) * (D + I)^-1/2  - I
@@ -98,6 +117,8 @@ class Propagation:
         int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
         mx_operator = sp.csr_matrix(out_degree_sqrt_inv).multiply(A_prime).multiply(int_degree_sqrt_inv) - sp.eye(self.A.shape[0])
         return mx_operator
+
+
 
     def first_order_gcn(self):
         """
