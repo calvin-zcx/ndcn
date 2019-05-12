@@ -88,13 +88,13 @@ class Propagation:
         mx_operator = sp.csr_matrix(out_degree_sqrt_inv).multiply(A_prime).multiply(int_degree_sqrt_inv)
         return mx_operator  ## - sp.eye(self.A.shape[0])
 
-    def zipf_smoothing_alpha(self):
+    def zipf_smoothing_alpha(self, alpha=0.5):
         """
-        :return:  #  (D + I)^-1/2 * ( 0.5 * A + 0.5*I ) * (D + I)^-1/2
+        :return:  #  (aI  + (1-a)D)^-1/2 * ( a * I +  (1-a) * A) * (aI  + (1-a)D)^-1/2
         """
         assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
 
-        A_prime = 0.4 * self.A + 0.6 * sp.eye(self.A.shape[0])
+        A_prime = alpha * sp.eye(self.A.shape[0]) + (1 - alpha) * self.A
         out_degree = np.array(A_prime.sum(1), dtype=np.float32)
         int_degree = np.array(A_prime.sum(0), dtype=np.float32)
 
@@ -117,8 +117,6 @@ class Propagation:
         int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
         mx_operator = sp.csr_matrix(out_degree_sqrt_inv).multiply(A_prime).multiply(int_degree_sqrt_inv) - sp.eye(self.A.shape[0])
         return mx_operator
-
-
 
     def first_order_gcn(self):
         """

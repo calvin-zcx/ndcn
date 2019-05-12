@@ -21,7 +21,7 @@ def sparse_csr_matrix_to_torch_sparse_tensor(sparse_mx):
     return torch.sparse.FloatTensor(indices, values, shape)
 
 
-def load_data(dataset_name=r"cora", delta=1):
+def load_data(dataset_name=r"cora", alpha=0.6):
     r"""
      Load citation network datasets from ./data/NAME/ directory, and return
      the train, validation, test features, labels, and underlying networks (or its propagation operator)
@@ -101,11 +101,11 @@ def load_data(dataset_name=r"cora", delta=1):
     prp_features = Propagation(features)
     features_normalized = prp_features.row_normalization()
 
-    adj_gcn = adj
+    # adj_gcn = adj
     # Graph convolution operator
-    # prp_gcn = Propagation(adj)
+    prp_gcn = Propagation(adj)
     # adj_gcn = prp_gcn.zipf_smoothing()
-    # adj_gcn = prp_gcn.zipf_smoothing_alpha()
+    adj_gcn = prp_gcn.zipf_smoothing_alpha(alpha)
     # print('Delta: {}'.format(delta))
     # adj_gcn = prp_gcn.residual_smoothing(delta)
     # adj_gcn = prp_gcn.first_order_gcn()
@@ -124,7 +124,7 @@ def load_data(dataset_name=r"cora", delta=1):
     torch_idx_val = torch.LongTensor(idx_val)
     torch_idx_test = torch.LongTensor(idx_test)
 
-    return torch_adj_gcn.to_dense(), torch_features_normalized, torch_labels, torch_idx_train, torch_idx_val, torch_idx_test
+    return torch_adj_gcn, torch_features_normalized, torch_labels, torch_idx_train, torch_idx_val, torch_idx_test
 
 
 def accuracy(output, labels):

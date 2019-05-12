@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torchdiffeq as ode
 from utils import *
 
+
 class ODEFunc(nn.Module):
     def __init__(self, hidden_size, A, dropout=0.0, no_graph=False, no_control=False):
         super(ODEFunc, self).__init__()
