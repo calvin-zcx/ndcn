@@ -92,7 +92,7 @@ class Propagation:
         """
         :return:  #  (aI  + (1-a)D)^-1/2 * ( a * I +  (1-a) * A) * (aI  + (1-a)D)^-1/2
         """
-        assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
+        # assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
 
         A_prime = alpha * sp.eye(self.A.shape[0]) + (1 - alpha) * self.A
         out_degree = np.array(A_prime.sum(1), dtype=np.float32)
@@ -107,7 +107,7 @@ class Propagation:
         """
         :return:  #  (D + I)^-1/2 * ( A + I ) * (D + I)^-1/2  - I
         """
-        assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
+        # assert self.number_of_self_loops() == 0, r"The adjacency matrix has self-loops"
 
         A_prime = self.A + sp.eye(self.A.shape[0])
         out_degree = np.array(A_prime.sum(1), dtype=np.float32)

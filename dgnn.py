@@ -17,7 +17,8 @@ import pandas as pd
 from utils import *
 from sms import *
 from neural_dynamics import *
-
+import functools
+print = functools.partial(print, flush=True)
 import torchdiffeq as ode
 # Arguments
 parser = argparse.ArgumentParser()
@@ -80,7 +81,7 @@ if args.cuda:
 
 T_VERY_BEGINING = time.time()
 # Input dataset
-adj, features, labels, idx_train, idx_val, idx_test = load_data("cora", args.alpha)
+adj, features, labels, idx_train, idx_val, idx_test = load_data(args.dataset, args.alpha)
 
 if args.cuda:
     adj = adj.cuda()

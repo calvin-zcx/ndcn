@@ -66,8 +66,14 @@ def load_data(dataset_name=r"cora", alpha=0.6):
     if dataset_name == 'citeseer':
         # Fix citeseer dataset (there are some isolated nodes in the graph)
         # Find isolated nodes, add them as zero-vecs into the right position
-        # Added later
-        pass
+        test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
+        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+        tx_extended[test_idx_range - min(test_idx_range), :] = tx
+        tx = tx_extended
+        ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
+        ty_extended[test_idx_range - min(test_idx_range), :] = ty
+        ty = ty_extended
+
 
     # Combine the train and test feature matrices and labels lists into a united one
     features = sp.vstack((allx, tx)).tolil()
@@ -81,9 +87,9 @@ def load_data(dataset_name=r"cora", alpha=0.6):
 #     features = sp.lil_matrix(features)
 ########################################################################
 
-    features[test_idx_reorder,:] = tx  # features[test_idx_range, :]
+    features[test_idx_reorder,:] = features[test_idx_range, :] #tx  #
     labels = np.vstack((ally, ty))
-    labels[test_idx_reorder, :] = ty  # labels[test_idx_range, :]
+    labels[test_idx_reorder, :] = labels[test_idx_range, :] #ty  #
 
     # Build graph from a dictionary of list to a sparse matrix for computing
     row_col = [(row, col) for row in graph for col in graph.get(row)]
