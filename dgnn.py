@@ -167,7 +167,7 @@ if args.model == 'differential_gcn':
     t = torch.linspace(0, T, time_tick).float()
     no_control = True if args.no_control else False
 
-    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True)]#,  nn.Tanh()]#,
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh()]  #,
                        # nn.Linear(hidden_size, hidden_size, bias=True)]
         # RowNorm(),,
         #               nn.Linear(hidden_size, hidden_size, bias=True)]
