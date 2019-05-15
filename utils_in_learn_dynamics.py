@@ -122,6 +122,19 @@ def normalized_laplacian(A):
     return mx_operator
 
 
+def normalized_adj(A):
+    """
+    Input A: np.ndarray
+    :return:  np.ndarray  D^-1/2 *  A   * D^-1/2
+    """
+    out_degree = np.array(A.sum(1), dtype=np.float32)
+    int_degree = np.array(A.sum(0), dtype=np.float32)
+
+    out_degree_sqrt_inv = np.power(out_degree, -0.5, where=(out_degree != 0))
+    int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
+    mx_operator = np.diag(out_degree_sqrt_inv) @ A @ np.diag(int_degree_sqrt_inv)
+    return mx_operator
+
 def grid_8_neighbor_graph(N):
     """
     Build discrete grid graph, each node has 8 neighbors
