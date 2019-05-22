@@ -133,6 +133,94 @@ def load_data(dataset_name=r"cora", alpha=0.6):
     return torch_adj_gcn, torch_features_normalized, torch_labels, torch_idx_train, torch_idx_val, torch_idx_test
 
 
+def load_data_np(dataset_name=r"cora" ):
+    r"""
+     Load citation network datasets from ./data/NAME/ directory, and return
+     the train, validation, test features, labels, and underlying networks (or its propagation operator)
+    :return:
+
+    Datasets' format:
+        ind.dataset_name.x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
+        ind.dataset_name.tx => the feature vectors of the test instances as scipy.sparse.csr.csr_matrix object;
+        ind.dataset_name.allx => the feature vectors of both labeled and unlabeled training instances
+            (a superset of ind.dataset_name.x) as scipy.sparse.csr.csr_matrix object;
+        ind.dataset_name.y => the one-hot labels of the labeled training instances as numpy.ndarray object;
+        ind.dataset_name.ty => the one-hot labels of the test instances as numpy.ndarray object;
+        ind.dataset_name.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
+        ind.dataset_name.graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
+            object;
+        ind.dataset_name.test.index => the indices of test instances in graph, for the inductive setting as list object.
+        All objects above must be saved using python pickle module.
+
+    Args:
+
+    Examples:
+
+    """
+    # x: scipy.sparse.csr.csr_matrix
+    # y: numpy.ndarray
+    # index: list
+    # graph: collections.defaultdict
+    names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
+    objects = []
+    for name in names:
+        with open("data/{}/ind.{}.{}".format(dataset_name.lower(), dataset_name.lower(), name), "rb") as f:
+            if sys.version_info > (3, 0):
+                objects.append(pkl.load(f, encoding='latin1'))
+            else:
+                objects.append(pkl.load(f))
+
+    x, y, tx, ty, allx, ally, graph = tuple(objects)
+    test_idx_reorder = np.loadtxt("data/{}/ind.{}.test.index".format(dataset_name.lower(), dataset_name.lower()),
+                                  dtype=np.int64)
+    test_idx_range = np.sort(test_idx_reorder)
+
+    if dataset_name == 'citeseer':
+        # Fix citeseer dataset (there are some isolated nodes in the graph)
+        # Find isolated nodes, add them as zero-vecs into the right position
+        test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
+        tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+        tx_extended[test_idx_range - min(test_idx_range), :] = tx
+        tx = tx_extended
+        ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
+        ty_extended[test_idx_range - min(test_idx_range), :] = ty
+        ty = ty_extended
+
+
+    # Combine the train and test feature matrices and labels lists into a united one
+    features = sp.vstack((allx, tx)).tolil()
+# #########################################
+#     features = features.toarray()
+#     feature_sort_index = np.argsort(np.array(features.sum(0)))
+#     """np.sort(b)[-600:].sum() / b.sum()
+#         0.84053963
+# """
+#     features[:, feature_sort_index[-500:]] = 0
+#     features = sp.lil_matrix(features)
+########################################################################
+
+    features[test_idx_reorder,:] = features[test_idx_range, :] #tx  #
+    labels = np.vstack((ally, ty))
+    labels[test_idx_reorder, :] = labels[test_idx_range, :] #ty  #
+
+    # Build graph from a dictionary of list to a sparse matrix for computing
+    row_col = [(row, col) for row in graph for col in graph.get(row)]
+    adj = sp.csr_matrix((np.ones(len(row_col)), (zip(*row_col))))
+    # from directed citation graph to undirected symmetric graph
+    adj = adj + adj.T
+    adj[adj > 1] = 1
+
+    # Divide data into train, validation, and test datasets
+    idx_train = range(len(y))
+    idx_val = range(len(y), len(y)+500)
+    idx_test = test_idx_range.tolist()
+
+    # Normalize feature matrix
+    prp_features = Propagation(features)
+    features_normalized = prp_features.row_normalization()
+    return adj,  features_normalized, labels,  idx_train,  idx_val,  idx_test
+
+
 def accuracy(output, labels):
     preds = output.max(1)[1].type_as(labels)
     correct = preds.eq(labels).double()

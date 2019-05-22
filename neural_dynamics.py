@@ -80,56 +80,57 @@ class ODEBlock(nn.Module):
         return out[-1] if self.terminal else out  # 100 * 400 * 10
 
 
-class GraphOperator(nn.Module):
-    def __init__(self,  alpha=True):
-        super(GraphOperator, self).__init__()
-        if alpha:
-            self.alpha = nn.Parameter(torch.FloatTensor([0.5]))
-        else:
-            self.register_parameter('alpha', None)
-
-    def forward(self, A, x):  # How to use t?
-        """
-        :param t:  end time tick, if t is not used, it is an autonomous system
-        :param x:  initial value   N_node * N_dim   400 * hidden_size
-        :return:
-        """
-        A_prime = self.alpha * A + (1.0-self.alpha) * torch.eye(A.shape[0]).cuda()
-        out_degree = A_prime.sum(1)
-        # in_degree = A_prime.sum(0)
-
-        out_degree_sqrt_inv = torch.matrix_power(torch.diag(out_degree), -1)
-        out_degree_sqrt_inv[torch.isinf(out_degree_sqrt_inv)] = 0.0
-        # int_degree_sqrt_inv = torch.matrix_power(torch.diag(in_degree), -0.5)
-        # int_degree_sqrt_inv[torch.isinf(int_degree_sqrt_inv)] = 0.0
-        mx_operator = torch.mm(out_degree_sqrt_inv, A_prime)
-        x = torch.mm(mx_operator, x)
-        return x
-
-
-class ODEFunc_A(nn.Module):
-    def __init__(self, hidden_size, A, dropout=0.0, no_graph=False, no_control=False):
-        super(ODEFunc_A, self).__init__()
-        self.hidden_size = hidden_size
-        self.dropout = dropout
-        self.dropout_layer = nn.Dropout(dropout)
-        self.A = A  # N_node * N_node
-        # self.nfe = 0
-        self.wt = nn.Linear(hidden_size, hidden_size)
-        self.no_graph = no_graph
-        self.no_control = no_control
-        self.GraphOperator = GraphOperator(alpha=True)
-
-    def forward(self, t, x):  # How to use t?
-        """
-        :param t:  end time tick, if t is not used, it is an autonomous system
-        :param x:  initial value   N_node * N_dim   400 * hidden_size
-        :return:
-        """
-
-        x = self.GraphOperator.forward(self.A, x)
-        if not self.no_control:
-            x = self.wt(x)
-        x = self.dropout_layer(x)
-        x = F.relu(x)
-        return x
+# TO BE DELETED!
+# class GraphOperator(nn.Module):
+#     def __init__(self,  alpha=True):
+#         super(GraphOperator, self).__init__()
+#         if alpha:
+#             self.alpha = nn.Parameter(torch.FloatTensor([0.5]))
+#         else:
+#             self.register_parameter('alpha', None)
+#
+#     def forward(self, A, x):  # How to use t?
+#         """
+#         :param t:  end time tick, if t is not used, it is an autonomous system
+#         :param x:  initial value   N_node * N_dim   400 * hidden_size
+#         :return:
+#         """
+#         A_prime = self.alpha * A + (1.0-self.alpha) * torch.eye(A.shape[0]).cuda()
+#         out_degree = A_prime.sum(1)
+#         # in_degree = A_prime.sum(0)
+#
+#         out_degree_sqrt_inv = torch.matrix_power(torch.diag(out_degree), -1)
+#         out_degree_sqrt_inv[torch.isinf(out_degree_sqrt_inv)] = 0.0
+#         # int_degree_sqrt_inv = torch.matrix_power(torch.diag(in_degree), -0.5)
+#         # int_degree_sqrt_inv[torch.isinf(int_degree_sqrt_inv)] = 0.0
+#         mx_operator = torch.mm(out_degree_sqrt_inv, A_prime)
+#         x = torch.mm(mx_operator, x)
+#         return x
+#
+#
+# class ODEFunc_A(nn.Module):
+#     def __init__(self, hidden_size, A, dropout=0.0, no_graph=False, no_control=False):
+#         super(ODEFunc_A, self).__init__()
+#         self.hidden_size = hidden_size
+#         self.dropout = dropout
+#         self.dropout_layer = nn.Dropout(dropout)
+#         self.A = A  # N_node * N_node
+#         # self.nfe = 0
+#         self.wt = nn.Linear(hidden_size, hidden_size)
+#         self.no_graph = no_graph
+#         self.no_control = no_control
+#         self.GraphOperator = GraphOperator(alpha=True)
+#
+#     def forward(self, t, x):  # How to use t?
+#         """
+#         :param t:  end time tick, if t is not used, it is an autonomous system
+#         :param x:  initial value   N_node * N_dim   400 * hidden_size
+#         :return:
+#         """
+#
+#         x = self.GraphOperator.forward(self.A, x)
+#         if not self.no_control:
+#             x = self.wt(x)
+#         x = self.dropout_layer(x)
+#         x = F.relu(x)
+#         return x

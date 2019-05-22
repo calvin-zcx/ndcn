@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 import math
 
+
 class GraphConvolution(nn.Module):
 
     def __init__(self, input_size, output_size, bias=True):

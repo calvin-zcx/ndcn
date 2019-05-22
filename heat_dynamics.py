@@ -17,7 +17,9 @@ import functools
 print = functools.partial(print, flush=True)
 
 parser = argparse.ArgumentParser('Heat Diffusion Dynamic Case')
-parser.add_argument('--method', type=str, choices=['dopri5', 'adams'], default='dopri5')
+parser.add_argument('--method', type=str,
+                    choices=['dopri5', 'adams', 'explicit_adams', 'fixed_adams','tsit5', 'euler', 'midpoint', 'rk4'],
+                    default='dopri5')
 parser.add_argument('--rtol', type=float, default=0.01,
                     help='optional float64 Tensor specifying an upper bound on relative error, per element of y')
 parser.add_argument('--atol', type=float, default=0.001,
