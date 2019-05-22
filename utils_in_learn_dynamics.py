@@ -67,9 +67,7 @@ def visualize(N, x0, xt, figname, title ='Dynamics in Complex Network', dir='png
 
 def visualize_graph_matrix(G, title, dir=r'figure/network'):
     A = nx.to_numpy_array(G)
-    # plt.pcolormesh(B)
     fig = plt.figure()  # figsize=(12, 4), facecolor='white'
-    # plt.title(title)
     fig.tight_layout()
     plt.imshow(A, cmap='Greys')  # ''YlGn')
     # plt.pcolormesh(A)
@@ -134,6 +132,7 @@ def normalized_adj(A):
     int_degree_sqrt_inv = np.power(int_degree, -0.5, where=(int_degree != 0))
     mx_operator = np.diag(out_degree_sqrt_inv) @ A @ np.diag(int_degree_sqrt_inv)
     return mx_operator
+
 
 def grid_8_neighbor_graph(N):
     """
