@@ -47,7 +47,8 @@ parser.add_argument('--layout', type=str, choices=['community', 'degree'], defau
 parser.add_argument('--seed', type=int, default=0, help='Random Seed')
 parser.add_argument('--T', type=float, default=5., help='Terminal Time')
 
-
+parser.add_argument('--operator', type=str,
+                    choices=['lap', 'norm_lap', 'kipf', 'norm_adj' ], default='norm_lap')
 parser.add_argument('--baseline', type=str,
                     choices=['differential_gcn', 'no_embedding', 'no_control', 'no_graph'], default='differential_gcn')
 parser.add_argument('--dump', action='store_true', help='Save Results')
@@ -109,8 +110,18 @@ if args.viz:
 D = torch.diag(A.sum(1))
 L = (D - A)
 t = torch.linspace(0., args.T, args.time_tick)  # args.time_tick) # 100 vector
-# OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-OM = torch.FloatTensor(normalized_laplacian(A.numpy()))
+if args.operator == 'lap':
+    print('Graph Operator: Laplacian')
+    OM = L
+elif args.operator == 'kipf':
+    print('Graph Operator: Kipf')
+    OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+elif args.operator == 'norm_adj':
+    print('Graph Operator: Normalized Adjacency')
+    OM = torch.FloatTensor(normalized_adj(A.numpy()))
+else:
+    print('Graph Operator[Default]: Normalized Laplacian')
+    OM = torch.FloatTensor(normalized_laplacian(A.numpy()))  # L # normalized_adj
 
 if args.sparse:
     # For small network, dense matrix is faster
