@@ -30,7 +30,7 @@ for filename in glob.glob(args.dir + r'/*.' + args.type):
     rel_error = results_dict['rel_error']
     v_abs_error.append(abs_error[-1])
     v_rel_error.append(rel_error[-1])
-    if 'abs_error2' in results_dict:
+    if 'abs_error2' in results_dict and len(results_dict['abs_error2']) > 0:
         has_2 = True
         abs_error2 = results_dict['abs_error2']
         rel_error2 = results_dict['rel_error2']
