@@ -208,7 +208,7 @@ appendix = now.strftime("%m%d-%H%M%S")
 zmin = solution_numerical.min()
 zmax = solution_numerical.max()
 for ii, xt in enumerate(solution_numerical, start=1):
-    if args.viz:
+    if args.viz and (ii % 10 == 1):
         print(xt.shape)
         visualize(N, x0, xt, '{:03d}-tru'.format(ii)+appendix, fig_title, dirname, zmin, zmax)
 
@@ -231,7 +231,7 @@ num_classes = 1  # 1 for regression
 # Params for discrete models
 input_n_graph= true_y0.shape[0]
 hidden_size_gnn = 5
-hidden_size_rnn = 20
+hidden_size_rnn = 10
 
 
 flag_model_type = ""  # "continuous" "discrete"  input, model, output format are little different
@@ -420,11 +420,12 @@ if __name__ == '__main__':
 
         if args.viz:
             for ii in range(pred_y.shape[1]):
-                xt_pred = pred_y[:, ii].cpu()
-                # print(xt_pred.shape)
-                visualize(N, x0, xt_pred,
-                          '{:03d}-{:s}-'.format(ii+1, args.dump_appendix)+appendix,
-                          fig_title, dirname, zmin, zmax)
+                if ii % 10 == 0:
+                    xt_pred = pred_y[:, ii].cpu()
+                    # print(xt_pred.shape)
+                    visualize(N, x0, xt_pred,
+                              '{:03d}-{:s}-'.format(ii+1, args.baseline)+appendix,
+                              fig_title, dirname, zmin, zmax)
 
         t_total = time.time() - t_start
         print('Total Time {:.4f}'.format(t_total))
