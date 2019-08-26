@@ -283,6 +283,11 @@ def test_graph_generator():
 
     visualize_graph_matrix(H)
 
+def get_parameter_number(net):
+    total_num = sum(p.numel() for p in net.parameters())
+    trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    print('Total {:d} Trainable {:d}'.format(total_num, trainable_num))
+    return {'Total': total_num, 'Trainable': trainable_num}
 
 if __name__ == '__main__':
     test_graph_generator()
