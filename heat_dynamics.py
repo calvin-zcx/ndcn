@@ -161,6 +161,12 @@ else:
     OM = torch.FloatTensor(normalized_laplacian(A.numpy()))  # L # normalized_adj
 
 
+if args.baseline in ['lstm_gnn', 'rnn_gnn', 'gru_gnn']:
+    print('For temporal-gnn model lstm_gnn, rnn_gnn, and gru_gnn'
+          'Graph Operator Choose: Kipf in GCN')
+    OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+
+
 if args.sparse:
     # For small network, dense matrix is faster
     # For large network, sparse matrix cause less memory
@@ -215,10 +221,10 @@ for ii, xt in enumerate(solution_numerical, start=1):
 
 true_y = solution_numerical.squeeze().t().to(device)  # 120 * 1 * 400  --squeeze--> 120 * 400 -t-> 400 * 120
 true_y0 = x0.to(device)  # 400 * 1
-true_y_train = true_y[:, id_train]  # 400*80  for train
-true_y_test = true_y[:, id_test]  # 400*20  for extrapolation prediction
+true_y_train = true_y[:, id_train].to(device)  # 400*80  for train
+true_y_test = true_y[:, id_test].to(device)  # 400*20  for extrapolation prediction
 if args.sampled_time == 'irregular':
-    true_y_test2 = true_y[:, id_test2]  # 400*20  for interpolation prediction
+    true_y_test2 = true_y[:, id_test2].to(device)  # 400*20  for interpolation prediction
 L = L.to(device)  # 400 * 400
 OM = OM.to(device)  # 400 * 400
 A = A.to(device)
@@ -264,27 +270,22 @@ elif args.baseline == 'no_graph':
 elif args.baseline == 'lstm_gnn':
     print('Choose model:' + args.baseline)
     flag_model_type = "discrete"
-    print('Graph Operator: Kipf') # Using GCN as graph embedding layer
-    OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-    OM = OM.to(device)
+    # print('Graph Operator: Kipf') # Using GCN as graph embedding layer
+    # OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
+    # OM = OM.to(device)
     model = TemporalGCN(input_size, hidden_size_gnn, input_n_graph, hidden_size_rnn, OM, dropout=dropout, rnn_type='lstm')
 elif args.baseline == 'gru_gnn':
     print('Choose model:' + args.baseline)
     flag_model_type = "discrete"
-    print('Graph Operator: Kipf')
-    OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-    OM = OM.to(device)
     model = TemporalGCN(input_size, hidden_size_gnn, input_n_graph, hidden_size_rnn, OM, dropout=dropout, rnn_type='gru')
 elif args.baseline == 'rnn_gnn':
     print('Choose model:' + args.baseline)
     flag_model_type = "discrete"
-    print('Graph Operator: Kipf')
-    OM = torch.FloatTensor(zipf_smoothing(A.numpy()))
-    OM = OM.to(device)
     model = TemporalGCN(input_size, hidden_size_gnn, input_n_graph, hidden_size_rnn, OM, dropout=dropout, rnn_type='rnn')
 
 
-# model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
+model = model.to(device)
+ # model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
 
 num_paras = get_parameter_number(model)
 

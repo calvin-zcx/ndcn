@@ -132,8 +132,8 @@ class GraphConvolution(nn.Module):
         # CAUTION: Pytorch does not support sparse * sparse matrix multiplication !!!
         # output = torch.sparse.mm(propagation_adj, support)
         output = torch.mm(propagation_adj, support)
-        output = torch.reshape(output, (1, -1)).contiguous()
-        return output
+        # output = torch.reshape(output, (1, -1)).contiguous()
+        return output.view(1, -1)
 
 
 class TemporalGCN(nn.Module):
@@ -149,6 +149,7 @@ class TemporalGCN(nn.Module):
         self.A = A
 
         self.gc = GraphConvolution(input_size_gnn, hidden_size_gnn)
+
         self.rnn_type = rnn_type
         if rnn_type == 'lstm':
             self.rnn = nn.LSTMCell(self.input_size_rnn, hidden_size_rnn)
@@ -162,9 +163,9 @@ class TemporalGCN(nn.Module):
     def forward(self, input, future=0):
         outputs = []
         # torch.double  h_t: 1*20  1 sample, 20 hidden in rnn
-        h_t = torch.zeros(1, self.hidden_size_rnn, dtype=torch.float)
+        h_t = torch.zeros(1, self.hidden_size_rnn, device=input.device)  # torch.zeros(1, self.hidden_size_rnn, dtype=torch.float)
         if self.rnn_type == 'lstm':
-            c_t = torch.zeros(1, self.hidden_size_rnn, dtype=torch.float)  # dtype=torch.double)
+            c_t = torch.zeros(1, self.hidden_size_rnn, device=input.device)  # torch.zeros(1, self.hidden_size_rnn, dtype=torch.float)  # dtype=torch.double)
 
         for i, input_t in enumerate(input.chunk(input.size(1), dim=1)):
             input_t = self.dropout_layer(input_t)  # input_t : 400*1
