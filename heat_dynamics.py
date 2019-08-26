@@ -215,8 +215,8 @@ for ii, xt in enumerate(solution_numerical, start=1):
 
 true_y = solution_numerical.squeeze().t().to(device)  # 120 * 1 * 400  --squeeze--> 120 * 400 -t-> 400 * 120
 true_y0 = x0.to(device)  # 400 * 1
-true_y_train = true_y[:, id_train] # 400*80  for train
-true_y_test = true_y[:, id_test] # 400*20  for extrapolation prediction
+true_y_train = true_y[:, id_train]  # 400*80  for train
+true_y_test = true_y[:, id_test]  # 400*20  for extrapolation prediction
 if args.sampled_time == 'irregular':
     true_y_test2 = true_y[:, id_test2]  # 400*20  for interpolation prediction
 L = L.to(device)  # 400 * 400
