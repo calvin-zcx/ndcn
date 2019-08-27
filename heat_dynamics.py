@@ -285,7 +285,7 @@ elif args.baseline == 'rnn_gnn':
 
 
 model = model.to(device)
- # model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
+# model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer).to(device)
 
 num_paras = get_parameter_number(model)
 
