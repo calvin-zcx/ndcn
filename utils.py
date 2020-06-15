@@ -5,7 +5,9 @@ import torch
 import sys
 from propagation import *
 from sklearn.metrics import f1_score
-
+import gexf
+import networkx as nx
+from networkx.algorithms import community
 
 def sparse_csr_matrix_to_torch_sparse_tensor(sparse_mx):
     """ Convert a scipy.sparse.csr_matrix to a torch sparse tensor.
@@ -21,7 +23,72 @@ def sparse_csr_matrix_to_torch_sparse_tensor(sparse_mx):
     return torch.sparse.FloatTensor(indices, values, shape)
 
 
-def load_data(dataset_name=r"cora", alpha=0.6):
+def build_graph_community(graph):
+    G = nx.Graph()
+    for row in graph:
+        for col in graph.get(row):
+            G.add_edge(row, col)
+    # cmu = list(community.greedy_modularity_communities(G))
+    communities_generator = community.girvan_newman(G)
+    for i in range(10):
+        cmu = next(communities_generator)
+    N = len(G.nodes)
+    label = np.zeros(N, dtype=np.int32)
+    i = 0
+    for cset in cmu:
+        i += 1
+        for node in cset:
+            label[node] = i
+
+    np.save('learned_labels_by_community_girvan_newman', label)
+    return label
+
+
+def dump_gexf(graph, labels):
+    gf = gexf.Gexf("Cora Net", "Cora file")
+    g = gf.addGraph("directed", "static", "Cora graph")
+
+    row_col = []
+    n_edge = 0
+    n_edge_del = 0
+    node_set = set()
+    for row in graph:
+        node_set.add(row)
+        for col in graph.get(row):
+            node_set.add(col)
+    print('In total node: ', len(node_set))
+    for i in node_set:
+        label_i = np.argmax(labels[i])
+        g.addNode(str(i), label=str(label_i))
+
+    for row in graph:
+        label_a = np.argmax(labels[row])
+        for col in graph.get(row):
+            n_edge += 1
+            label_b = np.argmax(labels[col])
+            # label_b = learned_labels[col]
+            # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
+            if row < len(labels) and col < len(labels):
+                if label_a != label_b:
+                    n_edge_del += 1
+                    # friend_of_row = set(graph.get(row))
+                    # friend_of_col = set(graph.get(col))
+                    # common_nei = friend_of_row.intersection(friend_of_col)
+                    # print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
+                    g.addEdge(str(n_edge), str(row), str(col), label='0')
+                    continue
+            g.addEdge(str(n_edge), str(row), str(col), label='1')
+    print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
+
+    # graph.addNode("0", "hello")
+    # graph.addNode("1", "World")
+    # graph.addEdge("0", "0", "1")
+
+    output_file = open("cora.gexf", "wb")
+    gf.write(output_file)
+
+
+def load_data(dataset_name=r"cora", alpha=0.5):
     r"""
      Load citation network datasets from ./data/NAME/ directory, and return
      the train, validation, test features, labels, and underlying networks (or its propagation operator)
@@ -93,6 +160,36 @@ def load_data(dataset_name=r"cora", alpha=0.6):
 
     # Build graph from a dictionary of list to a sparse matrix for computing
     row_col = [(row, col) for row in graph for col in graph.get(row)]
+
+    ## Test community
+    learned_labels = build_graph_community(graph)
+    # learned_labels = np.load('learned_labels.npy')
+    # learned_labels = np.load('learned_labels_by_community.npy')
+
+    # dump_gexf(graph, labels)
+
+    row_col = []
+    n_edge = 0
+    n_edge_del = 0
+    for row in graph:
+        label_a = np.argmax(labels[row])
+        label_a = learned_labels[row]
+        for col in graph.get(row):
+            n_edge += 1
+            label_b = np.argmax(labels[col])
+            label_b = learned_labels[col]
+            # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
+            if row < len(labels) and col < len(labels):
+                if label_a != label_b:
+                    n_edge_del += 1
+                    friend_of_row = set(graph.get(row))
+                    friend_of_col = set(graph.get(col))
+                    common_nei = friend_of_row.intersection(friend_of_col)
+                    print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
+                    continue
+            row_col.append((row, col))
+    print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
+    #
     adj = sp.csr_matrix((np.ones(len(row_col)), (zip(*row_col))))
     # from directed citation graph to undirected symmetric graph
     adj = adj + adj.T
@@ -110,8 +207,8 @@ def load_data(dataset_name=r"cora", alpha=0.6):
     # adj_gcn = adj
     # Graph convolution operator
     prp_gcn = Propagation(adj)
-    # adj_gcn = prp_gcn.zipf_smoothing()
-    adj_gcn = prp_gcn.zipf_smoothing_alpha(alpha)
+    adj_gcn = prp_gcn.zipf_smoothing()
+    # adj_gcn = prp_gcn.zipf_smoothing_alpha(alpha)
     # print('Delta: {}'.format(delta))
     # adj_gcn = prp_gcn.residual_smoothing(delta)
     # adj_gcn = prp_gcn.first_order_gcn()

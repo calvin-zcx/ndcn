@@ -37,7 +37,7 @@ parser.add_argument('--dropout', type=float, default=0.5,
                     help='Dropout rate (1 - keep probability).')
 parser.add_argument('--dataset', type=str, default="cora",
                     help='Dataset to use.')
-parser.add_argument('--model', type=str, default="DeepGCN",
+parser.add_argument('--model', type=str, default="GCN",
                     choices=["DeepGCN", "GCN", "DeepGCN2", "DeepGCN3", "DeepGCN4"],
                     help='model to use.')
 parser.add_argument('--iter', type=int, default=1, help='Number of experiments to conduct')
