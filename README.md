@@ -1,6 +1,8 @@
 # Neural Dynamics on Complex Networks
 
 Please refer to our paper:
+
+Zang, Chengxi, and Fei Wang. "Neural dynamics on complex networks." In Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining, pp. 892-902. 2020.
 ```
 @inproceedings{zang2020neural,
   title={Neural dynamics on complex networks},
