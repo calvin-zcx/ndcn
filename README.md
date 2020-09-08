@@ -55,6 +55,6 @@ python dgnn.py --dataset cora  --model  differential_gcn --iter 100   --dropout 
 a showcased results by my PC for --iter 5 experiments:
 ```
 Total time: 772.3850s;
-results: 83.180% +/- 0.756%, 83.000%;
+results: 83.180% (mean) +/- 0.756% (std), 83.000% (median);
 Min_Acc: 82.600%, Max_Acc: 84.500%
 ```
