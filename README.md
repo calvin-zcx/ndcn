@@ -24,6 +24,7 @@ torchdiffeq in https://github.com/rtqichen/torchdiffeq
 <!-- --network community --dump --sampled_time equal --baseline ndcn --gpu -1 --weight_decay 1e-4 -->
 
 ## Running examples
+ Animations in gif folder
 ### NDCN for mutualistic interation dynamics 
 Python files: mutualistic_dynamics.py
 ```
@@ -40,4 +41,11 @@ Python files: heat_dynamics.py and gene_dynamics.py
 ```
 python heat_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --baseline ndcn --viz --gpu -1 --weight_decay 1e-3
 python gene_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --baseline ndcn --viz --gpu -1 --weight_decay 1e-4
+```
+
+
+
+## Semisupervised learning on graph experiments
+```
+python dgnn.py --dataset cora  --model  differential_gcn --iter 100   --dropout 0 --hidden 256 --T 1.2 --time_tick 16 --epochs 100 --dump --weight_decay 0.024 --no_control --method dopri5 --alpha 0
 ```
