@@ -1,4 +1,5 @@
 # Neural Dynamics on Complex Networks
+
 Please refer to our paper:
 ```
 @inproceedings{zang2020neural,
@@ -44,7 +45,15 @@ python gene_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --
 ```
 
 ### Refer to Animations in gif folder
+#### Heat Diffusion on a Grid Graph, Ground Truth
+![Heat Diffusion Ground True](gif/heat_grid_tru.gif )
 
+#### Heat Diffusion on a Grid Graph Learned by our NDCN model
+![Heat Diffusion NDCN](gif/heat_grid_differential_gcn.gif )
+
+3 dynamics (gene, heat, mutualistic dynamics) on 5 graphs (grid', 'random', 'power_law', 'small_world', 'community' graphs) are shown in gif folder, 
+or
+download our ppt  https://drive.google.com/file/d/1KBl-6Oh7BRxcQNQrPeHuKPPI6lndDa5Y/  and show in full screen to check our compiled animations.
 
 ## Semisupervised learning on graph by our continuous-time GNN model:
 --iter 100 experiments:
