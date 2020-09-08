@@ -53,7 +53,7 @@ python gene_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --
 
 3 dynamics (gene, heat, mutualistic dynamics) on 5 graphs (grid', 'random', 'power_law', 'small_world', 'community' graphs) are shown in gif folder, 
 or
-download our ppt  https://drive.google.com/file/d/1KBl-6Oh7BRxcQNQrPeHuKPPI6lndDa5Y/  and show in full screen to check our compiled animations.
+download our ppt  https://drive.google.com/file/d/1KBl-6Oh7BRxcQNQrPeHuKPPI6lndDa5Y and show in full screen to check our compiled animations.
 
 ## Semisupervised learning on graph by our continuous-time GNN model:
 --iter 100 experiments:
