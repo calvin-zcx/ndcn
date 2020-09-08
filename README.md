@@ -63,9 +63,10 @@ download our ppt  https://drive.google.com/file/d/1KBl-6Oh7BRxcQNQrPeHuKPPI6lndD
 python dgnn.py --dataset cora  --model  differential_gcn --iter 100   --dropout 0 --hidden 256 --T 1.2 --time_tick 16 --epochs 100 --dump --weight_decay 0.024 --no_control --method dopri5 --alpha 0
 ```
 
-a showcased results by my PC for --iter 5 experiments:
+a showcased results by my laptop for --iter 5 experiments:
 ```
 Total time: 772.3850s;
 results: 83.180% (mean) +/- 0.756% (std), 83.000% (median);
 Min_Acc: 82.600%, Max_Acc: 84.500%
+{'no_cuda': False, 'fastmode': False, 'seed': -1, 'epochs': 100, 'rtol': 0.1, 'atol': 0.1, 'lr': 0.01, 'weight_decay': 0.024, 'nHiddenLayers': 0, 'hidden': 256, 'dropout': 0.0, 'dataset': 'cora', 'model': 'differential_gcn', 'iter': 5, 'dump': True, 'delta': 1.0, 'sms': False, 'normalize': False, 'Euler': False, 'T': 1.2, 'time_tick': 16, 'no_control': True, 'method': 'dopri5', 'alpha': 0.0, 'cuda': False}
 ```
