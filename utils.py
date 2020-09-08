@@ -5,7 +5,7 @@ import torch
 import sys
 from propagation import *
 from sklearn.metrics import f1_score
-import gexf
+#import gexf
 import networkx as nx
 from networkx.algorithms import community
 
@@ -44,48 +44,48 @@ def build_graph_community(graph):
     return label
 
 
-def dump_gexf(graph, labels):
-    gf = gexf.Gexf("Cora Net", "Cora file")
-    g = gf.addGraph("directed", "static", "Cora graph")
-
-    row_col = []
-    n_edge = 0
-    n_edge_del = 0
-    node_set = set()
-    for row in graph:
-        node_set.add(row)
-        for col in graph.get(row):
-            node_set.add(col)
-    print('In total node: ', len(node_set))
-    for i in node_set:
-        label_i = np.argmax(labels[i])
-        g.addNode(str(i), label=str(label_i))
-
-    for row in graph:
-        label_a = np.argmax(labels[row])
-        for col in graph.get(row):
-            n_edge += 1
-            label_b = np.argmax(labels[col])
-            # label_b = learned_labels[col]
-            # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
-            if row < len(labels) and col < len(labels):
-                if label_a != label_b:
-                    n_edge_del += 1
-                    # friend_of_row = set(graph.get(row))
-                    # friend_of_col = set(graph.get(col))
-                    # common_nei = friend_of_row.intersection(friend_of_col)
-                    # print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
-                    g.addEdge(str(n_edge), str(row), str(col), label='0')
-                    continue
-            g.addEdge(str(n_edge), str(row), str(col), label='1')
-    print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
-
-    # graph.addNode("0", "hello")
-    # graph.addNode("1", "World")
-    # graph.addEdge("0", "0", "1")
-
-    output_file = open("cora.gexf", "wb")
-    gf.write(output_file)
+# def dump_gexf(graph, labels):
+#     gf = gexf.Gexf("Cora Net", "Cora file")
+#     g = gf.addGraph("directed", "static", "Cora graph")
+#
+#     row_col = []
+#     n_edge = 0
+#     n_edge_del = 0
+#     node_set = set()
+#     for row in graph:
+#         node_set.add(row)
+#         for col in graph.get(row):
+#             node_set.add(col)
+#     print('In total node: ', len(node_set))
+#     for i in node_set:
+#         label_i = np.argmax(labels[i])
+#         g.addNode(str(i), label=str(label_i))
+#
+#     for row in graph:
+#         label_a = np.argmax(labels[row])
+#         for col in graph.get(row):
+#             n_edge += 1
+#             label_b = np.argmax(labels[col])
+#             # label_b = learned_labels[col]
+#             # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
+#             if row < len(labels) and col < len(labels):
+#                 if label_a != label_b:
+#                     n_edge_del += 1
+#                     # friend_of_row = set(graph.get(row))
+#                     # friend_of_col = set(graph.get(col))
+#                     # common_nei = friend_of_row.intersection(friend_of_col)
+#                     # print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
+#                     g.addEdge(str(n_edge), str(row), str(col), label='0')
+#                     continue
+#             g.addEdge(str(n_edge), str(row), str(col), label='1')
+#     print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
+#
+#     # graph.addNode("0", "hello")
+#     # graph.addNode("1", "World")
+#     # graph.addEdge("0", "0", "1")
+#
+#     output_file = open("cora.gexf", "wb")
+#     gf.write(output_file)
 
 
 def load_data(dataset_name=r"cora", alpha=0.5):
