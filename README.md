@@ -12,11 +12,14 @@ Please refer to our paper:
 ## Install libs:
 ```
 conda create --name ndcn 
+conda activate ndcn
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch 
 conda install networkx 
 conda install matplotlib 
 conda install scipy
 conda install scikit-learn
+conda install pandas
+torchdiffeq in https://github.com/rtqichen/torchdiffeq
 ```
 <!-- --network community --dump --sampled_time equal --baseline ndcn --gpu -1 --weight_decay 1e-4 -->
 
