@@ -57,7 +57,7 @@ python gene_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --
 or
 download our ppt  https://drive.google.com/file/d/1KBl-6Oh7BRxcQNQrPeHuKPPI6lndDa5Y and show in full screen to check our compiled animations.
 
-## Semisupervised learning on graph by our continuous-time GNN model:
+## Semisupervised learning on graphs by our continuous-time GNN model:
 --iter 100 experiments:
 ```
 python dgnn.py --dataset cora  --model  differential_gcn --iter 100   --dropout 0 --hidden 256 --T 1.2 --time_tick 16 --epochs 100 --dump --weight_decay 0.024 --no_control --method dopri5 --alpha 0
