@@ -1,6 +1,14 @@
-# ndcn
-Neural Dynamics on Complex Networks
-
+# Neural Dynamics on Complex Networks
+Please refer to our paper:
+```
+@inproceedings{zang2020neural,
+  title={Neural dynamics on complex networks},
+  author={Zang, Chengxi and Wang, Fei},
+  booktitle={Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
+  pages={892--902},
+  year={2020}
+}
+```
 ## Install libs:
 ```
 conda create --name ndcn 
