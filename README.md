@@ -1,14 +1,25 @@
-# ndcn
-Neural Dynamics on Complex Networks
-
+# Neural Dynamics on Complex Networks
+Please refer to our paper:
+```
+@inproceedings{zang2020neural,
+  title={Neural dynamics on complex networks},
+  author={Zang, Chengxi and Wang, Fei},
+  booktitle={Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
+  pages={892--902},
+  year={2020}
+}
+```
 ## Install libs:
 ```
 conda create --name ndcn 
+conda activate ndcn
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch 
 conda install networkx 
 conda install matplotlib 
 conda install scipy
 conda install scikit-learn
+conda install pandas
+torchdiffeq in https://github.com/rtqichen/torchdiffeq
 ```
 <!-- --network community --dump --sampled_time equal --baseline ndcn --gpu -1 --weight_decay 1e-4 -->
 
