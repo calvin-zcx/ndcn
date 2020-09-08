@@ -274,7 +274,7 @@ if args.dump:
     rmax = r.loc[:, 'Accuracy'].max()
     time_step = r.loc[:, 'Step'].mean()
     print(vars(args).__str__())
-    print('results: {:.3f}% +/- {:.3f}%, {:.3f}%;'.format(rmean*100, rstd*100, rmedian*100))
+    print('results: {:.3f}% +/- {:.3f}%, {:.3f}% (Median);'.format(rmean*100, rstd*100, rmedian*100))
     print('Min_Acc: {:.3f}%, Max_Acc: {:.3f}%'.format(rmin*100, rmax*100))
     print('Time_Step: {:.5f};'.format(time_step))
 
