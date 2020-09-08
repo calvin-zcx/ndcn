@@ -23,7 +23,8 @@ torchdiffeq in https://github.com/rtqichen/torchdiffeq
 ```
 <!-- --network community --dump --sampled_time equal --baseline ndcn --gpu -1 --weight_decay 1e-4 -->
 
-## Running examples
+## Learning continous-time or regularly-sampled graph dynamics
+
 ### NDCN for mutualistic interation dynamics 
 Python files: mutualistic_dynamics.py
 ```
@@ -40,4 +41,20 @@ Python files: heat_dynamics.py and gene_dynamics.py
 ```
 python heat_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --baseline ndcn --viz --gpu -1 --weight_decay 1e-3
 python gene_dynamics.py  --T 5 --network grid --dump --sampled_time irregular --baseline ndcn --viz --gpu -1 --weight_decay 1e-4
+```
+
+### Refer to Animations in gif folder
+
+
+## Semisupervised learning on graph by our continuous-time GNN model:
+--iter 100 experiments:
+```
+python dgnn.py --dataset cora  --model  differential_gcn --iter 100   --dropout 0 --hidden 256 --T 1.2 --time_tick 16 --epochs 100 --dump --weight_decay 0.024 --no_control --method dopri5 --alpha 0
+```
+
+a showcased results by my PC for --iter 5 experiments:
+```
+Total time: 772.3850s;
+results: 83.180% (mean) +/- 0.756% (std), 83.000% (median);
+Min_Acc: 82.600%, Max_Acc: 84.500%
 ```
