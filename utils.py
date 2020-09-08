@@ -161,35 +161,35 @@ def load_data(dataset_name=r"cora", alpha=0.5):
     # Build graph from a dictionary of list to a sparse matrix for computing
     row_col = [(row, col) for row in graph for col in graph.get(row)]
 
-    ## Test community
-    learned_labels = build_graph_community(graph)
-    # learned_labels = np.load('learned_labels.npy')
-    # learned_labels = np.load('learned_labels_by_community.npy')
-
-    # dump_gexf(graph, labels)
-
-    row_col = []
-    n_edge = 0
-    n_edge_del = 0
-    for row in graph:
-        label_a = np.argmax(labels[row])
-        label_a = learned_labels[row]
-        for col in graph.get(row):
-            n_edge += 1
-            label_b = np.argmax(labels[col])
-            label_b = learned_labels[col]
-            # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
-            if row < len(labels) and col < len(labels):
-                if label_a != label_b:
-                    n_edge_del += 1
-                    friend_of_row = set(graph.get(row))
-                    friend_of_col = set(graph.get(col))
-                    common_nei = friend_of_row.intersection(friend_of_col)
-                    print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
-                    continue
-            row_col.append((row, col))
-    print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
+    # ## Test community
+    # learned_labels = build_graph_community(graph)
+    # # learned_labels = np.load('learned_labels.npy')
+    # # learned_labels = np.load('learned_labels_by_community.npy')
     #
+    # # dump_gexf(graph, labels)
+    #
+    # row_col = []
+    # n_edge = 0
+    # n_edge_del = 0
+    # for row in graph:
+    #     label_a = np.argmax(labels[row])
+    #     label_a = learned_labels[row]
+    #     for col in graph.get(row):
+    #         n_edge += 1
+    #         label_b = np.argmax(labels[col])
+    #         label_b = learned_labels[col]
+    #         # if row < len(y)+2000 and col < len(y)+2000:  # Delete bridge edge of two different labels indeed improve
+    #         if row < len(labels) and col < len(labels):
+    #             if label_a != label_b:
+    #                 n_edge_del += 1
+    #                 friend_of_row = set(graph.get(row))
+    #                 friend_of_col = set(graph.get(col))
+    #                 common_nei = friend_of_row.intersection(friend_of_col)
+    #                 print(n_edge_del, row, col, len(common_nei), len(friend_of_row), len(friend_of_col))
+    #                 continue
+    #         row_col.append((row, col))
+    # print('n_edge: ', n_edge, 'e_edge_del: ', n_edge_del)
+    # #
     adj = sp.csr_matrix((np.ones(len(row_col)), (zip(*row_col))))
     # from directed citation graph to undirected symmetric graph
     adj = adj + adj.T
@@ -207,8 +207,8 @@ def load_data(dataset_name=r"cora", alpha=0.5):
     # adj_gcn = adj
     # Graph convolution operator
     prp_gcn = Propagation(adj)
-    adj_gcn = prp_gcn.zipf_smoothing()
-    # adj_gcn = prp_gcn.zipf_smoothing_alpha(alpha)
+    # adj_gcn = prp_gcn.zipf_smoothing()
+    adj_gcn = prp_gcn.zipf_smoothing_alpha(alpha)
     # print('Delta: {}'.format(delta))
     # adj_gcn = prp_gcn.residual_smoothing(delta)
     # adj_gcn = prp_gcn.first_order_gcn()

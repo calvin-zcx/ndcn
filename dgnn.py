@@ -15,7 +15,7 @@ import pandas as pd
 # import numpy as np
 
 from utils import *
-from sms import *
+#from sms import *
 from neural_dynamics import *
 import functools
 print = functools.partial(print, flush=True)
@@ -82,7 +82,7 @@ if args.cuda:
 T_VERY_BEGINING = time.time()
 # Input dataset
 adj, features, labels, idx_train, idx_val, idx_test = load_data(args.dataset, args.alpha)
-
+print('Load data done')
 if args.cuda:
     adj = adj.cuda()
     features = features.cuda()
@@ -140,6 +140,7 @@ elif args.model == 'resGCN':
     model = nn.Sequential(*in_layer, *feature_layer, *out_layer)
 
 elif args.model == 'odeGCN':
+    print('Model: odeGCN')
     input_size = features.shape[1]
     hidden_size = args.hidden
     num_classes = labels.max().item() + 1
@@ -156,29 +157,29 @@ elif args.model == 'odeGCN':
     model = nn.Sequential(*in_layer, *feature_layer, *out_layer)
 
 if args.model == 'differential_gcn':
-    pass
+    #pass
     #--dataset cora  --model  differential_gcn --iter 5   --dropout 0 --hidden 256 --T 1.1 --time_tick 13 --epochs 100 --dump --weight_decay 0.021 --no_control  --method dopri5 --alpha 0.1 --no-cuda
     # print('Choose model:' + args.model)
-    # input_size = features.shape[1]
-    # hidden_size = args.hidden
-    # num_classes = labels.max().item() + 1
-    # dropout = args.dropout
-    # T = args.T
-    # time_tick = args.time_tick
-    # print('T : {}, time tick: {}'.format(T, time_tick))
-    # t = torch.linspace(0, T, time_tick).float()
-    # no_control = True if args.no_control else False
-    #
-    # embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh()]  #,
-    #                    # nn.Linear(hidden_size, hidden_size, bias=True)]
-    #     # RowNorm(),,
-    #     #               nn.Linear(hidden_size, hidden_size, bias=True)]
-    # neural_dynamic_layer = [ODEBlock(
-    #     ODEFunc(hidden_size, adj, dropout=dropout, no_control=no_control),  # OM
-    #     t,
-    #     rtol=args.rtol, atol=args.atol, method=args.method, terminal=True)]  # t is like  continuous depth
-    # semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
-    # model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer)
+    input_size = features.shape[1]
+    hidden_size = args.hidden
+    num_classes = labels.max().item() + 1
+    dropout = args.dropout
+    T = args.T
+    time_tick = args.time_tick
+    print('T : {}, time tick: {}'.format(T, time_tick))
+    t = torch.linspace(0, T, time_tick).float()
+    no_control = True if args.no_control else False
+
+    embedding_layer = [nn.Linear(input_size, hidden_size, bias=True), nn.Tanh()]  #,
+                       # nn.Linear(hidden_size, hidden_size, bias=True)]
+        # RowNorm(),,
+        #               nn.Linear(hidden_size, hidden_size, bias=True)]
+    neural_dynamic_layer = [ODEBlock2(
+        ODEFunc(hidden_size, adj, dropout=dropout, no_control=no_control),  # OM
+        t,
+        rtol=args.rtol, atol=args.atol, method=args.method, terminal=True)]  # t is like  continuous depth
+    semantic_layer = [nn.Linear(hidden_size, num_classes, bias=True)]
+    model = nn.Sequential(*embedding_layer, *neural_dynamic_layer, *semantic_layer)
 
 optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -192,8 +193,8 @@ def train(ITER, epoch):
     t = time.time()
     model.train()
     optimizer.zero_grad()
-    output = model(features, adj)
-    # output = model(features)
+    # output = model(features, adj)
+    output = model(features)
 
     # loss_train = 0.0
     # for x in output:
@@ -207,8 +208,8 @@ def train(ITER, epoch):
         # Evaluate validation set performance separately,
         # deactivates dropout during validation run.
         model.eval()
-        output = model(features, adj)
-        # output = model(features)
+        # output = model(features, adj)
+        output = model(features)
 
     loss_val = F.cross_entropy(output [idx_val], labels[idx_val])
     acc_val = accuracy(output [idx_val], labels[idx_val])
@@ -223,8 +224,8 @@ def train(ITER, epoch):
 
 def test():
     model.eval()
-    output = model(features, adj)
-    # output = model(features)
+    # output = model(features, adj)
+    output = model(features)
     loss_test = F.cross_entropy(output[idx_test], labels[idx_test])
     acc_test = accuracy(output[idx_test], labels[idx_test])
     print("Test set results:",
@@ -283,8 +284,9 @@ if args.dump:
     sms_str += ('Settings: ' + vars(args).__str__())
 
     if args.sms:
-        mysms = SMS()
-        mysms.send_sms(sms_str)
+        # mysms = SMS()
+        # mysms.send_sms(sms_str)
+        print(sms_str)
 
 
 

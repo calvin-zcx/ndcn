@@ -79,6 +79,46 @@ class ODEBlock(nn.Module):
         return out[-1] if self.terminal else out  # 100 * 400 * 10
 
 
+class ODEBlock2(nn.Module):
+    def __init__(self, odefunc, vt, rtol=.01, atol=.001, method='dopri5', adjoint=False, terminal=False): #vt,         :param vt:
+        """
+        :param odefunc: X' = f(X, t, G, W)
+        :param rtol: optional float64 Tensor specifying an upper bound on relative error,
+            per element of `y`.
+        :param atol: optional float64 Tensor specifying an upper bound on absolute error,
+            per element of `y`.
+        :param method:
+            'explicit_adams': AdamsBashforth,
+            'fixed_adams': AdamsBashforthMoulton,
+            'adams': VariableCoefficientAdamsBashforth,
+            'tsit5': Tsit5Solver,
+            'dopri5': Dopri5Solver,
+            'euler': Euler,
+            'midpoint': Midpoint,
+            'rk4': RK4,
+        """
+
+        super(ODEBlock2, self).__init__()
+        self.odefunc = odefunc
+        self.integration_time_vector = vt  # time vector
+        self.rtol = rtol
+        self.atol = atol
+        self.method = method
+        self.adjoint = adjoint
+        self.terminal = terminal
+
+    def forward(self,   x):
+        integration_time_vector = self.integration_time_vector.type_as(x)
+        if self.adjoint:
+            out = ode.odeint_adjoint(self.odefunc, x, integration_time_vector,
+                                     rtol=self.rtol, atol=self.atol, method=self.method)
+        else:
+            out = ode.odeint(self.odefunc, x, integration_time_vector,
+                             rtol=self.rtol, atol=self.atol, method=self.method)
+        # return out[-1]
+        return out[-1] if self.terminal else out  # 100 * 400 * 10
+
+
 class NDCN(nn.Module):  # myModel
     def __init__(self, input_size, hidden_size, A, num_classes,  dropout=0.0,
                  no_embed=False, no_graph=False, no_control=False,
