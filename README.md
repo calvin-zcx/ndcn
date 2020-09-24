@@ -22,7 +22,8 @@ conda install matplotlib
 conda install scipy
 conda install scikit-learn
 conda install pandas
-torchdiffeq in https://github.com/rtqichen/torchdiffeq
+
+Besides, we adapted torchdiffeq in https://github.com/rtqichen/torchdiffeq into a local package due the change of its oringinal codes
 ```
 <!-- --network community --dump --sampled_time equal --baseline ndcn --gpu -1 --weight_decay 1e-4 -->
 
